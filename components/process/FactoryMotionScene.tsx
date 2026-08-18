@@ -1,4 +1,7 @@
+"use client";
+
 import Image from "next/image";
+import { useEffect, useRef } from "react";
 import type { ProcessTone } from "@/lib/ramen-process";
 
 const PROCESS_PHOTOS: Record<ProcessTone, { src: string; alt: string }> = {
@@ -13,19 +16,55 @@ const PROCESS_PHOTOS: Record<ProcessTone, { src: string; alt: string }> = {
   check: { src: "/process/check.webp", alt: "포장된 라면을 검사 장비로 확인하는 품질검사 공정" },
 };
 
+const PROCESS_VIDEOS: Record<ProcessTone, string> = {
+  mix: "/process/videos/mix.mp4",
+  dough: "/process/videos/dough.mp4",
+  noodle: "/process/videos/noodle.mp4",
+  steam: "/process/videos/steam.mp4",
+  dry: "/process/videos/dry.mp4",
+  cool: "/process/videos/cool.mp4",
+  soup: "/process/videos/soup.mp4",
+  pack: "/process/videos/pack.mp4",
+  check: "/process/videos/check.mp4",
+};
+
 export function FactoryMotionScene({ tone, playing = true }: { tone: ProcessTone; playing?: boolean }) {
   const photo = PROCESS_PHOTOS[tone];
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const syncPlayback = () => {
+      if (playing && !reducedMotion.matches) {
+        void video.play().catch(() => undefined);
+      } else {
+        video.pause();
+      }
+    };
+
+    syncPlayback();
+    reducedMotion.addEventListener("change", syncPlayback);
+    return () => reducedMotion.removeEventListener("change", syncPlayback);
+  }, [playing, tone]);
 
   return (
     <figure className={`factory-motion-scene tone-${tone} ${playing ? "is-playing" : "is-paused"}`}>
       <Image src={photo.src} alt={photo.alt} fill sizes="(max-width: 860px) 100vw, 65vw" priority={tone === "noodle"} />
-      {tone === "noodle" && (
-        <span className="factory-noodle-flow" aria-hidden="true">
-          <Image src={photo.src} alt="" fill sizes="(max-width: 860px) 100vw, 65vw" />
-        </span>
-      )}
+      <video
+        ref={videoRef}
+        key={PROCESS_VIDEOS[tone]}
+        src={PROCESS_VIDEOS[tone]}
+        poster={photo.src}
+        muted
+        loop
+        playsInline
+        preload="metadata"
+        aria-hidden="true"
+      />
       <span className="factory-photo-shade" aria-hidden="true" />
-      <span className="factory-photo-motion" aria-hidden="true" />
     </figure>
   );
 }

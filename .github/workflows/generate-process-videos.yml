@@ -1,0 +1,65 @@
+name: Generate process videos with fal.ai
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/generate-process-videos.yml
+      - scripts/generate-process-videos.mjs
+  workflow_dispatch:
+    inputs:
+      scope:
+        description: Video generation scope
+        required: true
+        default: noodle
+        type: choice
+        options:
+          - noodle
+          - all
+      confirm_spend:
+        description: Type GENERATE_ALL only when scope is all
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: fal-process-video-generation
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      FAL_KEY: ${{ secrets.FAL_KEY }}
+      SCOPE: ${{ github.event_name == 'workflow_dispatch' && inputs.scope || 'noodle' }}
+      CONFIRM_SPEND: ${{ github.event_name == 'workflow_dispatch' && inputs.confirm_spend || 'GENERATE_NOODLE' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Confirm ffmpeg
+        run: ffmpeg -version
+
+      - name: Generate optimized process video
+        run: node scripts/generate-process-videos.mjs "$SCOPE"
+
+      - name: Commit generated video
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/process/videos
+          if git diff --cached --quiet; then
+            echo "No generated video changes"
+            exit 0
+          fi
+          git commit -m "Add fal.ai process video ($SCOPE)"
+          git pull --rebase origin main
+          git push origin HEAD:main
