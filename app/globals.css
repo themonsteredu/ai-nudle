@@ -175,32 +175,9 @@ a { color: inherit; text-decoration: none; }
 .student-handoff a { flex: 0 0 auto; border-radius: 11px; background: var(--brown); padding: 14px 18px; color: white; font-size: 11px; font-weight: 900; }
 
 .factory-motion-scene { position: relative; overflow: hidden; min-height: 100%; margin: 0; background: #1f1713; isolation: isolate; }
-.factory-motion-scene > img { z-index: 0; object-fit: cover; transform: scale(1.02); }
-.factory-noodle-flow { position: absolute; inset: 0; z-index: 1; overflow: hidden; clip-path: polygon(0 24%,76% 24%,100% 40%,100% 100%,0 100%); pointer-events: none; -webkit-mask-image: linear-gradient(to bottom,transparent 22%,#000 33%,#000 94%,transparent 100%); mask-image: linear-gradient(to bottom,transparent 22%,#000 33%,#000 94%,transparent 100%); }
-.factory-noodle-flow img { object-fit: cover; transform: scale(1.035) translateY(-2px); will-change: transform,opacity; }
+.factory-motion-scene > img { z-index: 0; object-fit: cover; }
+.factory-motion-scene > video { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; object-fit: cover; }
 .factory-photo-shade { position: absolute; inset: 0; z-index: 2; background: linear-gradient(110deg,rgba(27,18,13,.18),transparent 52%,rgba(27,18,13,.08)); pointer-events: none; }
-.factory-photo-motion { position: absolute; inset: 0; z-index: 3; overflow: hidden; pointer-events: none; }
-.factory-photo-motion::before, .factory-photo-motion::after { position: absolute; content: ""; opacity: 0; }
-.factory-motion-scene.is-playing > img { animation: factory-photo-pan 5.2s ease-in-out infinite alternate; }
-.factory-motion-scene.tone-noodle > img { transform: scale(1.035); }
-.factory-motion-scene.tone-noodle.is-playing > img { animation: none; }
-.factory-motion-scene.tone-noodle.is-playing .factory-noodle-flow img { animation: noodle-photo-flow 1.15s linear infinite; }
-.factory-motion-scene.is-paused > img, .factory-motion-scene.is-paused .factory-noodle-flow img, .factory-motion-scene.is-paused .factory-photo-motion::before, .factory-motion-scene.is-paused .factory-photo-motion::after { animation-play-state: paused !important; }
-.factory-motion-scene.tone-steam .factory-photo-motion::before { left: 8%; right: 8%; bottom: -18%; height: 60%; border-radius: 50%; background: rgba(255,255,255,.38); filter: blur(34px); opacity: .55; animation: photo-steam 3.4s ease-in-out infinite; }
-.factory-motion-scene.tone-dry .factory-photo-motion::before { inset: 0; background: linear-gradient(100deg,transparent 10%,rgba(255,147,72,.22) 48%,transparent 82%); opacity: .7; animation: photo-heat 2.8s ease-in-out infinite; }
-.factory-motion-scene.tone-cool .factory-photo-motion::before { left: -40%; top: 18%; width: 48%; height: 5px; border-radius: 999px; background: rgba(210,248,255,.82); box-shadow: 0 54px rgba(210,248,255,.62),0 108px rgba(210,248,255,.44); opacity: .75; animation: photo-air 2.1s linear infinite; }
-.factory-motion-scene.tone-mix .factory-photo-motion::after, .factory-motion-scene.tone-dough .factory-photo-motion::after, .factory-motion-scene.tone-noodle .factory-photo-motion::after, .factory-motion-scene.tone-pack .factory-photo-motion::after { left: -45%; bottom: 0; width: 44%; height: 5px; background: var(--orange); box-shadow: 0 0 18px rgba(239,106,40,.7); opacity: .85; animation: photo-progress 2.8s ease-in-out infinite; }
-.factory-motion-scene.tone-soup .factory-photo-motion::before { inset: 0; background: radial-gradient(circle at 54% 42%,rgba(255,167,84,.3),transparent 24%); opacity: .8; animation: photo-focus 2.4s ease-in-out infinite; }
-.factory-motion-scene.tone-check .factory-photo-motion::after { left: 4%; right: 4%; top: 10%; height: 4px; background: #9df8dd; box-shadow: 0 0 20px #9df8dd; opacity: .9; animation: photo-scan 2.4s ease-in-out infinite; }
-
-@keyframes factory-photo-pan { from { transform: scale(1.02) translate3d(-.6%,0,0); } to { transform: scale(1.09) translate3d(.8%,-.8%,0); } }
-@keyframes noodle-photo-flow { 0% { transform: scale(1.035) translateY(-2px); opacity: .15; } 18% { opacity: .92; } 80% { transform: scale(1.035) translateY(14px); opacity: .92; } 100% { transform: scale(1.035) translateY(17px); opacity: 0; } }
-@keyframes photo-steam { 0%,100% { transform: translateY(20%) scale(.85); opacity: .28; } 50% { transform: translateY(-18%) scale(1.08); opacity: .62; } }
-@keyframes photo-heat { 0%,100% { transform: translateX(-18%); opacity: .22; } 50% { transform: translateX(18%); opacity: .72; } }
-@keyframes photo-air { to { transform: translateX(310%); } }
-@keyframes photo-progress { 0% { transform: translateX(0); } 65%,100% { transform: translateX(330%); } }
-@keyframes photo-focus { 50% { transform: scale(1.14); opacity: .45; } }
-@keyframes photo-scan { 50% { transform: translateY(340px); } }
 
 /* Student factory experience */
 .factory-experience-intro { display: grid; overflow: hidden; min-height: 610px; grid-template-columns: .8fr 1.2fr; border-radius: 26px; background: var(--brown); color: white; box-shadow: var(--shadow); }
