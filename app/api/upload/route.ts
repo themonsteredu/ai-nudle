@@ -3,6 +3,7 @@ import { mediaAssets } from "@/db/schema";
 import { isTeacherRequest } from "@/lib/teacher-auth";
 import { createId } from "@/lib/ids";
 import { ensureDatabase } from "@/lib/db-init";
+import { getCloudflareEnv } from "@/lib/cloudflare-env";
 
 const ALLOWED_TYPES = new Map([
   ["image/jpeg", "jpg"],
@@ -18,7 +19,9 @@ export async function POST(request: Request) {
 
   try {
     await ensureDatabase();
-    const { env } = await import("cloudflare:workers");
+    const env = await getCloudflareEnv();
+    const bucket = env.BUCKET;
+    if (!bucket) throw new Error("Cloudflare R2 binding is unavailable.");
     const form = await request.formData();
     const file = form.get("file");
     if (!(file instanceof File)) {
@@ -33,7 +36,7 @@ export async function POST(request: Request) {
     }
 
     const key = `${createId("ingredient")}.${extension}`;
-    await env.BUCKET.put(key, file.stream(), {
+    await bucket.put(key, file.stream(), {
       httpMetadata: { contentType: file.type },
       customMetadata: { originalName: file.name },
     });

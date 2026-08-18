@@ -1,9 +1,12 @@
+import { getCloudflareEnv } from "@/lib/cloudflare-env";
+
 let initialization: Promise<unknown> | null = null;
 
 export async function ensureDatabase() {
   if (initialization) return initialization;
-  const { env } = await import("cloudflare:workers");
+  const env = await getCloudflareEnv();
   const d1 = env.DB;
+  if (!d1) throw new Error("Cloudflare D1 binding is unavailable.");
   initialization = d1.batch([
     d1.prepare(`CREATE TABLE IF NOT EXISTS app_data (
       key TEXT PRIMARY KEY NOT NULL,

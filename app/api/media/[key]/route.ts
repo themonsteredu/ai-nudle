@@ -1,3 +1,5 @@
+import { getCloudflareEnv } from "@/lib/cloudflare-env";
+
 export async function GET(
   _request: Request,
   context: { params: Promise<{ key: string }> },
@@ -6,8 +8,10 @@ export async function GET(
   if (!/^[a-zA-Z0-9._-]+$/.test(key)) {
     return new Response("Not found", { status: 404 });
   }
-  const { env } = await import("cloudflare:workers");
-  const object = await env.BUCKET.get(key);
+  const env = await getCloudflareEnv();
+  const bucket = env.BUCKET;
+  if (!bucket) return new Response("Not found", { status: 404 });
+  const object = await bucket.get(key);
   if (!object) return new Response("Not found", { status: 404 });
 
   const headers = new Headers();
