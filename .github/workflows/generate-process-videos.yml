@@ -1,6 +1,10 @@
 name: Generate process videos with fal.ai
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/generate-process-videos.yml
   workflow_dispatch:
     inputs:
       scope:
@@ -10,9 +14,10 @@ on:
         type: choice
         options:
           - noodle
+          - remaining
           - all
       confirm_spend:
-        description: Type GENERATE_ALL only when scope is all
+        description: Type GENERATE_ALL for remaining or all
         required: false
         type: string
 
@@ -29,8 +34,8 @@ jobs:
     timeout-minutes: 45
     env:
       FAL_KEY: ${{ secrets.FAL_KEY }}
-      SCOPE: ${{ github.event_name == 'workflow_dispatch' && inputs.scope || 'noodle' }}
-      CONFIRM_SPEND: ${{ github.event_name == 'workflow_dispatch' && inputs.confirm_spend || 'GENERATE_NOODLE' }}
+      SCOPE: ${{ github.event_name == 'workflow_dispatch' && inputs.scope || 'remaining' }}
+      CONFIRM_SPEND: ${{ github.event_name == 'workflow_dispatch' && inputs.confirm_spend || 'GENERATE_ALL' }}
     steps:
       - uses: actions/checkout@v4
         with:
