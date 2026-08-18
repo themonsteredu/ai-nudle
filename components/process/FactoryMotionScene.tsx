@@ -19,6 +19,11 @@ export function FactoryMotionScene({ tone, playing = true }: { tone: ProcessTone
   return (
     <figure className={`factory-motion-scene tone-${tone} ${playing ? "is-playing" : "is-paused"}`}>
       <Image src={photo.src} alt={photo.alt} fill sizes="(max-width: 860px) 100vw, 65vw" priority={tone === "noodle"} />
+      {tone === "noodle" && (
+        <span className="factory-noodle-flow" aria-hidden="true">
+          <Image src={photo.src} alt="" fill sizes="(max-width: 860px) 100vw, 65vw" />
+        </span>
+      )}
       <span className="factory-photo-shade" aria-hidden="true" />
       <span className="factory-photo-motion" aria-hidden="true" />
     </figure>
