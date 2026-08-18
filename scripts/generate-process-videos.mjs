@@ -9,9 +9,9 @@ const scope = process.argv[2] ?? "noodle";
 const key = process.env.FAL_KEY;
 
 if (!key) throw new Error("FAL_KEY GitHub secret is required.");
-if (!['noodle', 'all'].includes(scope)) throw new Error("Scope must be noodle or all.");
-if (scope === "all" && process.env.CONFIRM_SPEND !== "GENERATE_ALL") {
-  throw new Error("Full generation requires CONFIRM_SPEND=GENERATE_ALL.");
+if (!["noodle", "remaining", "all"].includes(scope)) throw new Error("Scope must be noodle, remaining, or all.");
+if (scope !== "noodle" && process.env.CONFIRM_SPEND !== "GENERATE_ALL") {
+  throw new Error("Multi-video generation requires CONFIRM_SPEND=GENERATE_ALL.");
 }
 
 const jobs = {
@@ -80,5 +80,7 @@ async function generateVideo(tone, prompt) {
 }
 
 await mkdir(OUTPUT_DIR, { recursive: true });
-const selectedJobs = scope === "all" ? Object.entries(jobs) : [["noodle", jobs.noodle]];
+const selectedJobs = scope === "noodle"
+  ? [["noodle", jobs.noodle]]
+  : Object.entries(jobs).filter(([tone]) => scope === "all" || tone !== "noodle");
 for (const [tone, prompt] of selectedJobs) await generateVideo(tone, prompt);
