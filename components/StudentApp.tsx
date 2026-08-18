@@ -12,6 +12,7 @@ import { createId } from "@/lib/ids";
 import type { AppSettings, StudentProject } from "@/lib/types";
 import { TasteView, CompareView } from "./student/TasteCompare";
 import { BestRecipeView, LabelView } from "./student/RecipeLabel";
+import { FactoryExperience } from "./student/FactoryExperience";
 
 export type StudentSection =
   | "home"
@@ -32,19 +33,6 @@ const MENU: { id: StudentSection; label: string; mark: string }[] = [
   { id: "label", label: "제품 라벨 만들기", mark: "07" },
 ];
 
-export const PROCESS_STEPS = [
-  { title: "원료 배합", short: "밀가루와 물, 원료를 정확히 계량해요.", tone: "mix" },
-  { title: "반죽", short: "원료를 고르게 섞어 탄력 있는 반죽을 만들어요.", tone: "dough" },
-  { title: "제면", short: "반죽을 얇게 펴고 일정한 굵기로 뽑아요.", tone: "noodle" },
-  { title: "증숙", short: "수증기로 면을 익혀 모양을 안정시켜요.", tone: "steam" },
-  { title: "건조 또는 유탕", short: "수분을 줄여 오래 보관할 수 있게 만들어요.", tone: "dry" },
-  { title: "냉각", short: "면을 빠르게 식혀 품질을 유지해요.", tone: "cool" },
-  { title: "스프·건더기 제조", short: "맛과 향, 식감을 설계해 별도로 만들어요.", tone: "soup" },
-  { title: "포장", short: "면과 스프, 건더기를 정해진 구성으로 담아요.", tone: "pack" },
-  { title: "품질검사", short: "맛, 중량, 포장 상태와 안전을 확인해요.", tone: "check" },
-];
-
-const SEQUENCE_POOL = [6, 2, 8, 0, 4, 1, 7, 3, 5];
 const STUDENT_ID_KEY = "ramen-rd-student-id";
 
 export const grams = (value: number) => `${Number(value.toFixed(2))}g`;
@@ -236,7 +224,7 @@ export default function StudentApp() {
             {section === "home" && (
               <HomeCover project={project} setProject={setProject} started={started} onStart={startResearch} />
             )}
-            {section === "process" && <ProcessView onComplete={() => setSection("lab")} />}
+            {section === "process" && <FactoryExperience onComplete={() => setSection("lab")} />}
             {section === "lab" && project.experiments[currentTest] && (
               <LabView
                 settings={settings}
@@ -327,39 +315,6 @@ function HomeCover({ project, setProject, started, onStart }: {
           <label><span>연구원 이름</span><input value={project.studentName} onChange={(event) => setProject({ ...project, studentName: event.target.value })} placeholder="이름을 입력하세요" maxLength={20} autoFocus /></label>
           <label><span>개발팀명 <small>선택</small></span><input value={project.teamName} onChange={(event) => setProject({ ...project, teamName: event.target.value })} placeholder="예: 매운맛 연구팀" maxLength={24} /></label>
           <button className="primary-cta compact" onClick={onStart}>연구 시작 <span>→</span></button>
-        </div>
-      )}
-    </section>
-  );
-}
-
-function ProcessView({ onComplete }: { onComplete: () => void }) {
-  const [index, setIndex] = useState(0);
-  const [sequenceMode, setSequenceMode] = useState(false);
-  const [answer, setAnswer] = useState<number[]>([]);
-  const [result, setResult] = useState("");
-  const step = PROCESS_STEPS[index];
-  const correct = answer.length === 9 && answer.every((value, answerIndex) => value === answerIndex);
-  return (
-    <section className="content-stage process-stage">
-      <div className="page-heading"><div><span className="eyebrow">STEP 02</span><h1>라면 제조 공정</h1></div><p>큰 흐름만 빠르게 살펴봐요.</p></div>
-      {!sequenceMode ? <>
-        <div className="process-rail">
-          {PROCESS_STEPS.map((item, stepIndex) => <button key={item.title} className={stepIndex === index ? "active" : ""} onClick={() => setIndex(stepIndex)}><span>{stepIndex + 1}</span><b>{item.title}</b></button>)}
-        </div>
-        <div className="process-focus">
-          <div className={`process-visual ${step.tone}`} aria-hidden="true"><span className="process-number">{String(index + 1).padStart(2, "0")}</span><div className="process-machine"><i /><i /><i /></div></div>
-          <div className="process-copy"><span>{index + 1} / {PROCESS_STEPS.length}</span><h2>{step.title}</h2><p>{step.short}</p>
-            <div className="process-controls"><button disabled={index === 0} onClick={() => setIndex(Math.max(0, index - 1))}>← 이전</button>{index < 8 ? <button className="filled" onClick={() => setIndex(index + 1)}>다음 공정 →</button> : <button className="filled" onClick={() => setSequenceMode(true)}>순서 맞춰보기 →</button>}</div>
-          </div>
-        </div>
-      </> : (
-        <div className="sequence-game">
-          <div className="sequence-title"><span>마지막 확인</span><h2>공정을 처음부터 눌러 보세요</h2></div>
-          <div className="sequence-answer">{answer.length === 0 && <p>선택한 공정이 여기에 순서대로 놓여요.</p>}{answer.map((value, answerIndex) => <button key={`${value}-${answerIndex}`} onClick={() => setAnswer(answer.filter((_, i) => i !== answerIndex))}><span>{answerIndex + 1}</span>{PROCESS_STEPS[value].title}</button>)}</div>
-          <div className="sequence-pool">{SEQUENCE_POOL.filter((value) => !answer.includes(value)).map((value) => <button key={value} onClick={() => { setAnswer([...answer, value]); setResult(""); }}>{PROCESS_STEPS[value].title}</button>)}</div>
-          {result && <p className={correct ? "sequence-success" : "sequence-retry"}>{result}</p>}
-          <div className="sequence-actions"><button onClick={() => { setAnswer([]); setResult(""); }}>다시 놓기</button><button className="filled" disabled={answer.length !== 9} onClick={() => setResult(correct ? "공정 순서 완성!" : "순서를 다시 살펴보세요.")}>순서 확인</button>{correct && result && <button className="primary-cta compact" onClick={onComplete}>배합 LAB으로 →</button>}</div>
         </div>
       )}
     </section>

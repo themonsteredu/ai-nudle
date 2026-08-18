@@ -14,9 +14,11 @@ import {
   SupplyPanel,
   ToppingPanel,
 } from "./teacher/TeacherPanels";
+import { CareerProcessPanel } from "./teacher/CareerProcessPanel";
 
 type TeacherSection =
   | "overview"
+  | "career"
   | "lesson"
   | "ingredients"
   | "toppings"
@@ -33,6 +35,7 @@ type TeacherSection =
 const NAV_GROUPS: { title: string; items: { id: TeacherSection; label: string }[] }[] = [
   { title: "수업 운영", items: [
     { id: "overview", label: "수업 개요" },
+    { id: "career", label: "직업소개·공정시연" },
     { id: "lesson", label: "2차시 수업지도안" },
   ] },
   { title: "재료 관리", items: [
@@ -103,8 +106,13 @@ export default function TeacherApp() {
   }, [notice]);
 
   async function loadTeacherData() {
-    const loaded = await loadSettings();
-    setSettingsState(loaded.settings);
+    try {
+      const loaded = await loadSettings();
+      setSettingsState(loaded.settings);
+    } catch {
+      setSettingsState(defaultSettings);
+      setNotice("기본 수업 설정으로 열었습니다. 저장소 연결 후 설정을 저장할 수 있어요.");
+    }
     setDirty(false);
     try {
       const studentData = await loadStudents();
@@ -209,6 +217,7 @@ export default function TeacherApp() {
             setSafetyChecked={setSafetyChecked}
           />
         )}
+        {section === "career" && <CareerProcessPanel />}
         {section === "lesson" && <LessonPanel settings={settings} />}
         {section === "ingredients" && <IngredientPanel settings={settings} setSettings={setSettings} uploadImage={uploadImage} />}
         {section === "toppings" && <ToppingPanel settings={settings} setSettings={setSettings} uploadImage={uploadImage} />}
