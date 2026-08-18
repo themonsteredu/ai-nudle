@@ -1,11 +1,6 @@
 name: Generate process videos with fal.ai
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - .github/workflows/generate-process-videos.yml
-      - scripts/generate-process-videos.mjs
   workflow_dispatch:
     inputs:
       scope:

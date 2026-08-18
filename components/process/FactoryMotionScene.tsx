@@ -39,6 +39,7 @@ export function FactoryMotionScene({ tone, playing = true }: { tone: ProcessTone
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
     const syncPlayback = () => {
       if (playing && !reducedMotion.matches) {
+        if (video.ended) video.currentTime = 0;
         void video.play().catch(() => undefined);
       } else {
         video.pause();
@@ -59,7 +60,6 @@ export function FactoryMotionScene({ tone, playing = true }: { tone: ProcessTone
         src={PROCESS_VIDEOS[tone]}
         poster={photo.src}
         muted
-        loop
         playsInline
         preload="metadata"
         aria-hidden="true"
