@@ -8,7 +8,7 @@
   "scripts": {
     "install:ci": "bash scripts/install-ci.sh",
     "dev": "next dev",
-    "build": "next build --webpack",
+    "build": "node scripts/fetch-process-videos.mjs && next build --webpack",
     "build:sites": "bash scripts/build-verified.sh",
     "start": "next start",
     "test:sites": "npm run build:sites && node --test tests/rendered-html.test.mjs",

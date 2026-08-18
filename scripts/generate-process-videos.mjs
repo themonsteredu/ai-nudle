@@ -68,8 +68,8 @@ async function generateVideo(tone, prompt) {
   await writeFile(sourcePath, Buffer.from(await videoResponse.arrayBuffer()));
 
   execFileSync("ffmpeg", [
-    "-y", "-i", sourcePath, "-an", "-vf", `scale=1280:-2:force_original_aspect_ratio=decrease,fps=24${tone === "noodle" ? ",reverse" : ""}`,
-    "-c:v", "libx264", "-preset", "medium", "-crf", "25", "-pix_fmt", "yuv420p",
+    "-y", "-i", sourcePath, "-an", "-vf", `scale=960:-2:force_original_aspect_ratio=decrease,fps=24${tone === "noodle" ? ",reverse" : ""}`,
+    "-c:v", "libx264", "-preset", "medium", "-crf", "28", "-pix_fmt", "yuv420p",
     "-movflags", "+faststart", optimizedPath,
   ], { stdio: "inherit" });
 
