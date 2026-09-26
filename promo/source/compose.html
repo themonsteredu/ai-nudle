@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><title>라면 R&amp;D 연구소 홍보영상</title>
+<style>
+:root{--bg:#24150d;--ink:#fbf6ea;--mute:#bfa58f;--mint:#ff8a45;--mint2:#ef6a28;--amber:#ffddbe;--red:#ff7a6b}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1920px;height:1080px;overflow:hidden;background:var(--bg);color:var(--ink);font-family:"Pretendard",sans-serif;letter-spacing:-0.02em}
+.stage{position:absolute;inset:0;overflow:hidden;background:radial-gradient(1200px 700px at 80% 20%,#4a2a18 0%,transparent 60%),radial-gradient(900px 600px at 10% 90%,#3a2114 0%,transparent 60%),var(--bg)}
+.grid{position:absolute;inset:-100px;background-image:linear-gradient(rgba(255,138,69,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(255,138,69,.05) 1px,transparent 1px);background-size:80px 80px}
+.scene{position:absolute;inset:0;opacity:0}
+.a{will-change:transform,opacity}
+/* hero */
+.hero img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.hero .shade{position:absolute;inset:0;background:linear-gradient(90deg,rgba(36,21,13,.92) 0%,rgba(36,21,13,.55) 45%,rgba(36,21,13,.1) 100%),linear-gradient(0deg,rgba(36,21,13,.85),transparent 40%)}
+.hero .txt{position:absolute;left:140px;top:300px;width:1100px}
+.eyebrow{font-size:30px;font-weight:600;color:var(--mint);letter-spacing:.04em;margin-bottom:28px;display:flex;align-items:center;gap:16px}
+.eyebrow::before{content:"";width:44px;height:3px;background:var(--mint);display:block}
+.big{font-size:104px;font-weight:800;line-height:1.12;letter-spacing:-0.04em}
+.big em{font-style:normal;color:var(--mint)}
+.sub{font-size:38px;font-weight:500;color:#f2e8d4;margin-top:34px;line-height:1.45}
+/* window scenes */
+.cap{position:absolute;left:110px;top:0;bottom:0;width:560px;display:flex;flex-direction:column;justify-content:center}
+.cap .num{font-size:26px;font-weight:700;color:var(--mint);letter-spacing:.08em;margin-bottom:22px}
+.cap h2{font-size:66px;font-weight:800;line-height:1.18;letter-spacing:-0.04em}
+.cap h2 em{font-style:normal;color:var(--mint)}
+.cap p{font-size:31px;font-weight:500;color:#dcc9b4;line-height:1.5;margin-top:30px}
+.chips{display:flex;flex-wrap:wrap;gap:12px;margin-top:34px}
+.chip{font-size:24px;font-weight:600;padding:10px 20px;border-radius:999px;border:1.5px solid rgba(255,138,69,.45);color:var(--mint);background:rgba(255,138,69,.07)}
+.win{position:absolute;left:720px;top:176px;width:1110px;border-radius:22px;overflow:hidden;background:#fbf6ea;border:1.5px solid rgba(255,138,69,.25);box-shadow:0 40px 120px rgba(0,0,0,.55),0 0 0 1px rgba(0,0,0,.4)}
+.win .bar{height:52px;display:flex;align-items:center;gap:10px;padding:0 22px;background:#3d261a;border-bottom:1px solid rgba(255,138,69,.14)}
+.win .bar i{width:14px;height:14px;border-radius:50%;background:#6f4a34;display:block}
+.win .bar span{margin-left:22px;flex:1;height:32px;border-radius:9px;background:#2a180e;color:#dcc9b4;font-size:19px;display:flex;align-items:center;padding:0 18px;font-weight:500}
+.win .view{position:relative;width:1110px;height:624px;overflow:hidden}
+.win .view img{position:absolute;left:0;top:0;transform-origin:0 0}
+.wide .win{left:320px;top:170px;width:1280px}
+.wide .win .view{width:1280px;height:720px}
+.wide .cap{left:320px;top:52px;bottom:auto;width:1280px;flex-direction:row;align-items:baseline;gap:28px;justify-content:flex-start}
+.wide .cap h2{font-size:58px}
+.wide .cap .num{margin:0}
+.tag{position:absolute;padding:14px 24px;border-radius:14px;background:rgba(36,21,13,.9);border:1.5px solid var(--mint);font-size:27px;font-weight:700;color:var(--mint);box-shadow:0 18px 50px rgba(0,0,0,.5);white-space:nowrap}
+.tag.warn{border-color:var(--amber);color:var(--amber)}
+.tag.red{border-color:var(--red);color:var(--red)}
+.ring{position:absolute;border:3px solid var(--amber);border-radius:18px;box-shadow:0 0 0 6px rgba(255,207,122,.15)}
+/* cases */
+.cases .head{position:absolute;left:0;right:0;top:120px;text-align:center}
+.cases .head h2{font-size:78px;font-weight:800;letter-spacing:-0.04em}
+.cases .head h2 em{font-style:normal;color:var(--mint)}
+.cases .head p{font-size:32px;color:#dcc9b4;margin-top:18px;font-weight:500}
+.cgrid{position:absolute;left:160px;right:160px;top:400px;display:grid;grid-template-columns:repeat(4,1fr);gap:26px}
+.card{height:220px;border-radius:22px;padding:30px 30px;background:linear-gradient(160deg,#4a2a18,#2e1b10);border:1.5px solid rgba(255,138,69,.2);display:flex;flex-direction:column;justify-content:space-between}
+.card b{display:block;margin-bottom:10px;font-size:22px;color:var(--mint);font-weight:700;letter-spacing:.06em}
+.card strong{font-size:36px;font-weight:800;line-height:1.25;letter-spacing:-0.03em}
+.card .ic{font-size:44px;line-height:1}
+.card.hot{border-color:rgba(255,207,122,.55)} .card.hot b{color:var(--amber)}
+/* stats */
+.stats{position:absolute;left:110px;right:110px;bottom:120px;display:flex;gap:26px}
+/* outro */
+.outro{display:flex;align-items:center;justify-content:center;flex-direction:column;text-align:center;padding-bottom:90px}
+.logo{display:flex;align-items:center;gap:26px}
+.logo svg{width:110px;height:110px}
+.logo .name{font-size:92px;font-weight:900;letter-spacing:.01em}
+.logo .name small{display:block;font-size:26px;letter-spacing:.3em;color:var(--mint);font-weight:600;margin-top:6px}
+.outro .line{font-size:50px;font-weight:700;margin-top:70px;letter-spacing:-0.03em}
+.outro .line em{font-style:normal;color:var(--mint)}
+.url{margin-top:56px;font-size:40px;font-weight:700;padding:22px 46px;border-radius:999px;background:var(--mint);color:#fff;letter-spacing:0}
+.outro .foot{margin-top:40px;font-size:26px;color:var(--mute);font-weight:500}
+.subs{position:absolute;left:0;right:0;bottom:44px;display:flex;justify-content:center;pointer-events:none}
+.subs span{font-size:40px;font-weight:600;line-height:1.35;color:#fff;background:rgba(30,17,10,.82);padding:14px 34px;border-radius:16px;text-align:center;max-width:1560px;box-shadow:0 10px 40px rgba(0,0,0,.35);letter-spacing:-0.02em}
+.progress{position:absolute;left:0;bottom:0;height:6px;background:var(--mint);opacity:.85}
+
+.hero img#hero-img{left:auto;right:0;width:1060px;height:100%;object-fit:cover;object-position:52% 50%;transform-origin:70% 50%}
+.hero .shade{background:linear-gradient(90deg,#24150d 0%,#24150d 45%,rgba(36,21,13,.6) 56%,rgba(36,21,13,0) 72%),linear-gradient(0deg,rgba(36,21,13,.85),transparent 35%)}
+.stamp{position:absolute;right:170px;top:130px;width:170px;height:170px;border-radius:50%;border:3px solid var(--ink);display:flex;align-items:center;justify-content:center;text-align:center;font-size:34px;font-weight:900;line-height:1.05;color:var(--ink);background:rgba(36,21,13,.35)}
+.flow{position:absolute;left:140px;top:760px;display:flex;gap:14px}
+.flow span{font-size:24px;font-weight:700;padding:10px 20px;border-radius:999px;background:rgba(255,138,69,.12);border:1.5px solid rgba(255,138,69,.5);color:#ffb88a}
+</style></head>
+<body>
+<div class="stage" id="stage">
+  <div class="grid a" id="grid"></div>
+
+  <section class="scene hero" id="s-hero">
+    <img class="a" id="hero-img" src="assets/ramen-hero.webp">
+    <div class="shade"></div>
+    <div class="stamp a" data-in="1.2">R&amp;D<br>LAB</div>
+    <div class="txt" style="top:250px">
+      <div class="eyebrow a" data-in="0.3">진로체험 · 식품개발연구원</div>
+      <div class="big a" data-in="0.7">오늘, 우리 반이<br><em>라면 연구소</em>가 됩니다</div>
+      <div class="sub a" data-in="1.6">라면 공정을 체험하고, 나만의 신제품 라면을 개발해요</div>
+    </div>
+    <div class="flow a" data-in="2.2"><span>공정 체험</span><span>스프 배합</span><span>시식 기록</span><span>BEST 레시피</span><span>제품 라벨</span></div>
+  </section>
+
+  <section class="scene" id="s-start">
+    <div class="cap">
+      <div class="num a" data-in="0.2">STEP 1 · 연구원 등록</div>
+      <h2 class="a" data-in="0.4">이름을 적으면<br>나는 오늘의<br><em>연구원</em></h2>
+      <p class="a" data-in="0.8">설치 없이 브라우저에서 바로. 태블릿·노트북 모두 OK.</p>
+    </div>
+    <div class="win a" data-win><div class="bar"><i></i><i></i><i></i><span>ramen-rd-lab.cuteheea0.chatgpt.site</span></div><div class="view"><img id="v-start"></div></div>
+  </section>
+
+  <section class="scene" id="s-factory">
+    <div class="cap">
+      <div class="num a" data-in="0.2">STEP 2 · 라면 제조 공정</div>
+      <h2 class="a" data-in="0.4">공장 설비를<br><em>직접 조작</em>해요</h2>
+      <p class="a" data-in="0.8">실제 생산라인 영상을 보며 5가지 공정 미션을 통과해요.</p>
+      <div class="chips a" data-in="1.2"><span class="chip">반죽</span><span class="chip">제면</span><span class="chip">유탕</span><span class="chip">냉각</span><span class="chip">품질검사</span></div>
+    </div>
+    <div class="win a" data-win><div class="bar"><i></i><i></i><i></i><span>ramen-rd-lab.cuteheea0.chatgpt.site</span></div><div class="view"><img id="v-factory"></div></div>
+    <div class="tag a" id="tag-factory" style="left:1440px;top:860px">× 2배속 · 실제 화면</div>
+  </section>
+
+  <section class="scene" id="s-lab">
+    <div class="cap">
+      <div class="num a" data-in="0.2">STEP 3 · 스프 배합 LAB</div>
+      <h2 class="a" data-in="0.4">정답은 없어요<br><em>먹어 보고</em><br>바꿔요</h2>
+      <p class="a" data-in="0.8">재료를 0.5g씩 조절해 배합하고, 실제 시식 후 맛을 기록해요.</p>
+      <div class="chips a" data-in="1.2"><span class="chip">TEST 4회</span><span class="chip">맛 태그</span><span class="chip">한 줄 메모</span></div>
+    </div>
+    <div class="win a" data-win><div class="bar"><i></i><i></i><i></i><span>ramen-rd-lab.cuteheea0.chatgpt.site</span></div><div class="view"><img id="v-lab"></div></div>
+  </section>
+
+  <section class="scene" id="s-best">
+    <div class="cap">
+      <div class="num a" data-in="0.2">STEP 4 · 비교와 선택</div>
+      <h2 class="a" data-in="0.4">4개 레시피 중<br><em>BEST</em>를 골라요</h2>
+      <p class="a" data-in="0.8">고른 레시피는 사리면 1개 기준 최종 계량표로 자동 확대돼요.</p>
+    </div>
+    <div class="win a" data-win><div class="bar"><i></i><i></i><i></i><span>ramen-rd-lab.cuteheea0.chatgpt.site</span></div><div class="view"><img id="v-best"></div></div>
+  </section>
+
+  <section class="scene" id="s-label">
+    <div class="cap">
+      <div class="num a" data-in="0.2">STEP 5 · 제품 라벨</div>
+      <h2 class="a" data-in="0.4">내가 만든 라면에<br><em>이름</em>을 붙여요</h2>
+      <p class="a" data-in="0.8">제품명과 맛 설명을 적으면 레시피가 담긴 라벨이 완성돼요.</p>
+    </div>
+    <div class="win a" data-win><div class="bar"><i></i><i></i><i></i><span>ramen-rd-lab.cuteheea0.chatgpt.site</span></div><div class="view"><img id="v-label"></div></div>
+  </section>
+
+  <section class="scene" id="s-cost">
+    <div class="cap">
+      <div class="num a" data-in="0.2">선생님용 관리센터</div>
+      <h2 class="a" data-in="0.4">재료비와 준비물<br><em>자동 계산</em></h2>
+      <p class="a" data-in="0.8">학생 수만 고르면 1인 재료비, 총 준비비용이 바로 나와요.</p>
+      <div class="chips a" data-in="1.2"><span class="chip">재료·단가 관리</span><span class="chip">알레르기 정보</span><span class="chip">수업지도안</span></div>
+    </div>
+    <div class="win a" data-win><div class="bar"><i></i><i></i><i></i><span>ramen-rd-lab.cuteheea0.chatgpt.site/teacher</span></div><div class="view"><img id="v-cost"></div></div>
+  </section>
+
+  <section class="scene" id="s-labels">
+    <div class="cap">
+      <div class="num a" data-in="0.2">출력도 한 번에</div>
+      <h2 class="a" data-in="0.4">반 전체 라벨을<br><em>A4로 인쇄</em></h2>
+      <p class="a" data-in="0.8">준비물 체크리스트, 원가표, 실험 기록지까지 PDF로 저장해요.</p>
+    </div>
+    <div class="win a" data-win><div class="bar"><i></i><i></i><i></i><span>ramen-rd-lab.cuteheea0.chatgpt.site/teacher</span></div><div class="view"><img id="v-labels"></div></div>
+  </section>
+
+  <section class="scene outro" id="s-outro">
+    <div class="logo a" data-in="0.1"><svg viewBox="0 0 40 40"><path d="M13 4c-2 3 2 5 0 8M20 3c-2 3 2 5 0 8M27 4c-2 3 2 5 0 8" stroke="#ff8a45" stroke-width="2.4" fill="none" stroke-linecap="round"/><path d="M4 18h32c0 9-7 16-16 16S4 27 4 18z" fill="#ff8a45"/><path d="M12 37h16" stroke="#ff8a45" stroke-width="3" stroke-linecap="round"/></svg><div class="name">라면 R&amp;D 연구소<small>FOOD R&amp;D LAB</small></div></div>
+    <div class="line a" data-in="0.6">먹어 보고, 고치고, 완성하는 <em>진짜 연구</em></div>
+    <div class="url a" data-in="1.1">ramen-rd-lab.cuteheea0.chatgpt.site</div>
+    <div class="foot a" data-in="1.5">설치 없이 브라우저에서 바로 · 2차시 식품개발연구원 진로체험</div>
+  </section>
+  <div class="subs"><span id="sub"></span></div>
+  <div class="progress" id="prog"></div>
+</div>
+<script>
+const FPS = 30;
+const clamp = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v));
+const ease = t => t < .5 ? 4*t*t*t : 1 - Math.pow(-2*t + 2, 3)/2;
+const eout = t => 1 - Math.pow(1 - t, 3);
+const lerp = (a, b, t) => a + (b - a) * t;
+// clip: frame dir, count, source width (px of frame), rate, offset seconds
+const CLIPS = {
+  start:{n:246,w:1600}, factory:{n:762,w:1600}, lab:{n:394,w:1600}, best:{n:252,w:1600},
+  label:{n:216,w:1600}, cost:{n:215,w:1600}, labels:{n:142,w:1600},
+};
+// view rects in 1600x900 css space: [x,y,w]  (h = w*9/16)
+const M0 = [270,86,1330], M1 = [300,96,1300];
+const SCENES = [
+  { id:'s-hero', dur:5.2 },
+  { id:'s-start', dur:6.0, img:'v-start', segs:[
+      { clip:'start', from:1.2, rate:1.15, len:6.0, view:[[0,0,1600],[290,200,1240]] } ] },
+  { id:'s-factory', dur:8.4, img:'v-factory', segs:[
+      { clip:'factory', from:2.2, rate:1.5, len:4.0, view:[M0,M1] },
+      { clip:'factory', from:13.6, rate:2.4, len:4.4, view:[M1,M0] } ] },
+  { id:'s-lab', dur:8.4, img:'v-lab', segs:[
+      { clip:'lab', from:0.8, rate:1.2, len:4.6, view:[M0,M1] },
+      { clip:'lab', from:7.4, rate:1.35, len:3.8, view:[M0,M1] } ] },
+  { id:'s-best', dur:6.8, img:'v-best', segs:[
+      { clip:'best', from:1.4, rate:1.05, len:6.8, view:[M0,[300,120,1270]] } ] },
+  { id:'s-label', dur:6.2, img:'v-label', segs:[
+      { clip:'label', from:0.9, rate:1.0, len:6.2, view:[M0,[330,100,1260]] } ] },
+  { id:'s-cost', dur:6.0, img:'v-cost', segs:[
+      { clip:'cost', from:0.6, rate:1.0, len:6.0, view:[[292,0,1308],[300,30,1300]] } ] },
+  { id:'s-labels', dur:5.0, img:'v-labels', segs:[
+      { clip:'labels', from:0.4, rate:0.85, len:5.0, view:[[292,0,1308],[300,20,1300]] } ] },
+  { id:'s-outro', dur:6.2 },
+];
+const XF = 0.6; // crossfade
+let acc = 0; for (const s of SCENES) { s.start = acc; acc += s.dur - XF; }
+const TOTAL = acc + XF;
+window.TOTAL = TOTAL;
+const cache = {};
+function src(clip, i) { const c = CLIPS[clip]; i = Math.max(1, Math.min(c.n, i)); return `frames/${clip}/${String(i).padStart(5,'0')}.jpg`; }
+async function setImg(el, url) {
+  if (el.dataset.src === url) return;
+  el.dataset.src = url; el.src = url;
+  try { await el.decode(); } catch {}
+}
+const SUBS = [
+  [0.5,4.3,'라면 한 봉지는 어떻게 만들어지고, 그 맛은 누가 정할까요?'],
+  [4.7,9.6,'라면 R&D 연구소에서는 학생이 직접 식품개발연구원이 되어 봐요.'],
+  [10.1,13.8,'먼저 반죽, 면 굵기, 유탕까지 공장 설비를 직접 조작하고'],
+  [13.9,17.4,'냉각과 품질검사를 통과해 면 생산을 완료해요.'],
+  [17.9,21.6,'다음은 스프 배합 실험! 재료를 조금씩 넣고 빼며 맛을 설계해요.'],
+  [21.7,25.3,'실제로 먹어 본 뒤, 맛 태그와 한 줄 메모로 기록합니다.'],
+  [25.7,31.4,'네 번의 실험을 비교하고, 가장 맛있었던 BEST 레시피를 골라요.'],
+  [31.9,37.0,'마지막으로 나만의 라면 이름을 짓고, 제품 라벨을 완성해요.'],
+  [37.5,42.4,'선생님은 학생 수만 고르면 재료비와 준비비용이 자동으로 계산돼요.'],
+  [42.9,46.9,'완성된 학생 라벨은 A4 한 장에 모아 바로 인쇄할 수 있어요.'],
+  [47.4,52.8,'먹어 보고, 고치고, 완성하는 진짜 연구. 라면 R&D 연구소에서 만나보세요.'],
+];
+window.SUBS = SUBS;
+window.render = async function (t) {
+  { const cur = SUBS.find(x => t >= x[0] && t <= x[1]); const el = document.getElementById('sub');
+    if (cur) { el.textContent = cur[2]; const o = Math.min(clamp((t-cur[0])/0.25), clamp((cur[1]-t)/0.25)); el.parentElement.style.opacity = o; el.style.visibility='visible'; }
+    else { el.style.visibility='hidden'; } }
+  document.getElementById('prog').style.width = (t / TOTAL * 100) + '%';
+  document.getElementById('grid').style.transform = `translate(${-(t*6)%80}px, ${-(t*3)%80}px)`;
+  const waits = [];
+  for (const s of SCENES) {
+    const el = document.getElementById(s.id);
+    const lt = t - s.start;
+    if (lt < -0.01 || lt > s.dur + 0.01) { el.style.opacity = 0; el.style.display = 'none'; continue; }
+    el.style.display = '';
+    const fin = s === SCENES[0] ? 1 : clamp(lt / XF), fout = s === SCENES.at(-1) ? clamp((s.dur - lt) / 0.8) : clamp((s.dur - lt) / XF);
+    el.style.opacity = Math.min(fin, fout);
+    // text entrance
+    el.querySelectorAll('[data-in]').forEach(a => {
+      const p = eout(clamp((lt - parseFloat(a.dataset.in)) / 0.7));
+      a.style.opacity = p; a.style.transform = `translateY(${(1 - p) * 34}px)`;
+    });
+    const win = el.querySelector('[data-win]');
+    if (win) { const p = eout(clamp((lt - 0.15) / 0.9)); win.style.opacity = p; win.style.transform = `translateY(${(1-p)*50}px) scale(${lerp(.96,1,p)})`; }
+    if (s.id === 's-hero') { document.getElementById('hero-img').style.transform = `scale(${1.02 + lt * 0.014})`; }
+    if (s.id === 's-factory') { const tg = document.getElementById('tag-factory'); const p = eout(clamp((lt-1.6)/0.6)); tg.style.opacity = p; tg.style.transform = `translateY(${(1-p)*20}px)`; }
+    if (s.segs) {
+      let off = 0, seg = s.segs[0];
+      for (const g of s.segs) { if (lt >= off) seg = g; off += g.len; }
+      let segStart = 0; for (const g of s.segs) { if (g === seg) break; segStart += g.len; }
+      const st = clamp(lt - segStart, 0, seg.len);
+      const frame = Math.round((seg.from + st * seg.rate) * FPS) + 1;
+      const img = document.getElementById(s.img);
+      const box = img.parentElement; const bw = box.clientWidth, bh = box.clientHeight;
+      const k = ease(clamp(st / seg.len));
+      const [a, b] = seg.view;
+      const vx = lerp(a[0], b[0], k), vy = lerp(a[1], b[1], k), vw = lerp(a[2], b[2], k);
+      const sc = bw / vw; // css px -> box px
+      const pxScale = 1600 / CLIPS[seg.clip].w; // frame px -> css px
+      img.style.width = CLIPS[seg.clip].w + 'px';
+      img.style.transform = `translate(${-vx*sc}px, ${-vy*sc}px) scale(${sc*pxScale})`;
+      waits.push(setImg(img, src(seg.clip, frame)));
+    }
+  }
+  await Promise.all(waits);
+};
+</script>
+</body></html>
