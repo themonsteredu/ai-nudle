@@ -35,6 +35,10 @@
 
 Node.js 22.13 이상. `npm ci` 후 Next.js 프런트는 `npm run dev`, 로컬 D1/R2 포함 검증은 `RAMEN_API_ORIGIN=local npx vite`를 사용합니다.
 
+Vercel에서는 `proxy.ts`가 기존 Sites API에 서버 인증을 붙여 연결합니다. Vercel 프로젝트의 Production 환경에 기존 Sites API 토큰을 `RAMEN_API_TOKEN`이라는 민감 환경 변수로 저장해야 합니다. `NEXT_PUBLIC_` 접두사를 붙이거나 소스에 토큰을 넣지 않습니다. 저장 서버의 공개 범위는 변경하지 않습니다. `RAMEN_API_ORIGIN`을 설정한다면 기존 Sites 주소만 사용할 수 있습니다. 로컬 데이터 검증은 Vite의 D1을 사용합니다.
+
+서버 연결·로그인 회귀 검증: `node --experimental-transform-types --test tests/backend-proxy.test.mjs`.
+
 - GitHub/Vercel 프런트의 기본 API 대상: 기존 Sites 저장 서버. `/api/teacher/*`도 같은 서버로 전달합니다.
 - Sites 저장 서버는 로컬 API로 빌드해야 합니다. 프런트와 서버의 새 버전을 함께 반영해야 반별 기록 API가 동작합니다.
 - 기존 D1 테이블의 JSON 필드를 확장했습니다. 기존 학생 레코드와 설정을 일괄 덮어쓰는 마이그레이션은 없습니다.

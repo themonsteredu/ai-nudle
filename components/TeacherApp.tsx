@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { loadSettings, loadStudents, saveSettings } from "@/lib/client-api";
+import { loadSettings, loadStudents, saveSettings, teacherSession } from "@/lib/client-api";
 import { defaultSettings } from "@/lib/defaults";
 import type { AppSettings, StudentProject, SupplyCategory } from "@/lib/types";
 import {
@@ -75,6 +75,7 @@ export default function TeacherApp() {
   const [authenticated, setAuthenticated] = useState<boolean | null>(null);
   const [password, setPassword] = useState("");
   const [loginError, setLoginError] = useState("");
+  const [loggingIn, setLoggingIn] = useState(false);
   const [section, setSection] = useState<TeacherSection>("classes");
   const [settings, setSettingsState] = useState<AppSettings>(defaultSettings);
   const [classId, setClassId] = useState("");
@@ -95,13 +96,15 @@ export default function TeacherApp() {
     let cancelled = false;
     async function check() {
       try {
-        const response = await fetch("/api/teacher/login", { cache: "no-store" });
-        const payload = await response.json() as { authenticated: boolean };
+        const payload = await teacherSession();
         if (cancelled) return;
         setAuthenticated(payload.authenticated);
         if (payload.authenticated) await loadTeacherData();
-      } catch {
-        if (!cancelled) setAuthenticated(false);
+      } catch (error) {
+        if (!cancelled) {
+          setAuthenticated(false);
+          setLoginError(error instanceof Error ? error.message : "로그인 서버에 연결하지 못했습니다.");
+        }
       }
     }
     void check();
@@ -147,25 +150,26 @@ export default function TeacherApp() {
 
   async function login(event: React.FormEvent) {
     event.preventDefault();
+    if (loggingIn) return;
+    setLoggingIn(true);
     setLoginError("");
-    const response = await fetch("/api/teacher/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ password }),
-    });
-    const payload = await response.json() as { authenticated?: boolean; error?: string };
-    if (!response.ok) {
-      setLoginError(payload.error || "비밀번호를 확인해 주세요.");
-      return;
+    try {
+      await teacherSession("POST", password);
+      await loadTeacherData();
+      setAuthenticated(true);
+      setPassword("");
+    } catch (error) {
+      setLoginError(error instanceof Error ? error.message : "로그인 서버에 연결하지 못했습니다.");
+    } finally {
+      setLoggingIn(false);
     }
-    setAuthenticated(true);
-    setPassword("");
-    await loadTeacherData();
   }
 
   async function logout() {
-    await fetch("/api/teacher/login", { method: "DELETE" });
-    setAuthenticated(false);
+    try {
+      await teacherSession("DELETE");
+      setAuthenticated(false);
+    } catch { setNotice("로그아웃하지 못했습니다. 다시 눌러 주세요."); }
   }
 
   async function saveAll() {
@@ -207,8 +211,8 @@ export default function TeacherApp() {
           <h1>교사용 페이지</h1>
           <p>수업 설정과 출력물을 관리합니다.</p>
           <label><span>비밀번호</span><input type="password" inputMode="numeric" value={password} onChange={(event) => setPassword(event.target.value)} autoFocus /></label>
-          {loginError && <div className="login-error">{loginError}</div>}
-          <button type="submit">입장하기</button>
+          {loginError && <div className="login-error" role="alert">{loginError}</div>}
+          <button type="submit" disabled={loggingIn}>{loggingIn ? "확인 중…" : "입장하기"}</button>
         </form>
       </main>
     );
