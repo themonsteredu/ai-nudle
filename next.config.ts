@@ -10,6 +10,7 @@ const nextConfig: NextConfig = {
   async rewrites() {
     const remoteRoutes = [
       "/api/settings",
+      "/api/teacher/:path*",
       "/api/students",
       "/api/upload",
       "/api/media/:path*",

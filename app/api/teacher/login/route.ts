@@ -6,7 +6,7 @@ import {
 } from "@/lib/teacher-auth";
 
 export async function GET(request: Request) {
-  return Response.json({ authenticated: isTeacherRequest(request) });
+  return Response.json({ authenticated: await isTeacherRequest(request) });
 }
 
 export async function POST(request: Request) {
@@ -17,13 +17,13 @@ export async function POST(request: Request) {
 
   return Response.json(
     { authenticated: true },
-    { headers: { "Set-Cookie": teacherCookie() } },
+    { headers: { "Set-Cookie": await teacherCookie() } },
   );
 }
 
-export async function DELETE() {
+export async function DELETE(request: Request) {
   return Response.json(
     { authenticated: false },
-    { headers: { "Set-Cookie": clearTeacherCookie() } },
+    { headers: { "Set-Cookie": await clearTeacherCookie(request) } },
   );
 }

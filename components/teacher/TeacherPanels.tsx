@@ -11,6 +11,8 @@ import type {
   SupplyItem,
   Topping,
 } from "@/lib/types";
+import { AllergenEditor } from "../recipe/Allergens";
+import { StickerPrintPanel } from "../recipe/Stickers";
 import { ProductLabelPreview } from "../student/RecipeLabel";
 
 type SettingsSetter = (settings: AppSettings) => void;
@@ -53,8 +55,8 @@ export function IngredientPanel({
         imageUrl: "",
         defaultAmount: 0,
         minAmount: 0,
-        maxAmount: 2,
-        step: 0.5,
+        maxAmount: 20,
+        step: 0.1,
         purchasePrice: 0,
         purchaseWeight: 100,
         allergen: "",
@@ -64,7 +66,7 @@ export function IngredientPanel({
     });
   }
   function remove(id: string) {
-    if (!window.confirm("이 스프 재료를 삭제할까요? 기존 학생 기록의 값은 화면에서 숨겨집니다.")) return;
+    if (!window.confirm("이 스프 재료를 학생 선택 목록에서 삭제할까요? 이미 저장한 레시피는 남습니다.")) return;
     setSettings({ ...settings, ingredients: settings.ingredients.filter((item) => item.id !== id) });
   }
   return (
@@ -94,7 +96,7 @@ export function IngredientPanel({
               <Field label="재료명"><input value={item.name} onChange={(event) => update(item.id, { name: event.target.value })} /></Field>
               <Field label="학생 표시명"><input value={item.displayName} onChange={(event) => update(item.id, { displayName: event.target.value })} /></Field>
               <Field label="맛 카테고리"><input value={item.category} onChange={(event) => update(item.id, { category: event.target.value })} /></Field>
-              <Field label="알레르기 정보"><input value={item.allergen} onChange={(event) => update(item.id, { allergen: event.target.value })} placeholder="없음 또는 해당 항목" /></Field>
+
               <Field label="기본 투입량 (g)"><input type="number" step="0.1" value={item.defaultAmount} onChange={(event) => update(item.id, { defaultAmount: numeric(event.target.value) })} /></Field>
               <Field label="최소량 (g)"><input type="number" step="0.1" value={item.minAmount} onChange={(event) => update(item.id, { minAmount: numeric(event.target.value) })} /></Field>
               <Field label="최대량 (g)"><input type="number" step="0.1" value={item.maxAmount} onChange={(event) => update(item.id, { maxAmount: numeric(event.target.value) })} /></Field>
@@ -103,6 +105,7 @@ export function IngredientPanel({
               <Field label="구입중량 (g)"><input type="number" value={item.purchaseWeight} onChange={(event) => update(item.id, { purchaseWeight: numeric(event.target.value) })} /></Field>
               <div className="calculated-field"><span>자동계산</span><strong>{ingredientUnitCost(item.purchasePrice, item.purchaseWeight).toFixed(1)}원/g</strong></div>
             </div>
+            <AllergenEditor value={item} onChange={(change) => update(item.id, change)} />
           </article>
         ))}
       </div>
@@ -147,11 +150,12 @@ export function ToppingPanel({
               <Field label="건더기명"><input value={item.name} onChange={(event) => update(item.id, { name: event.target.value })} /></Field>
               <Field label="학생 표시명"><input value={item.displayName} onChange={(event) => update(item.id, { displayName: event.target.value })} /></Field>
               <Field label="1인 사용량 (g)"><input type="number" step="0.1" value={item.amountPerStudent} onChange={(event) => update(item.id, { amountPerStudent: numeric(event.target.value) })} /></Field>
-              <Field label="알레르기 정보"><input value={item.allergen} onChange={(event) => update(item.id, { allergen: event.target.value })} /></Field>
+
               <Field label="구입가격 (원)"><input type="number" value={item.purchasePrice} onChange={(event) => update(item.id, { purchasePrice: numeric(event.target.value) })} /></Field>
               <Field label="구입중량 (g)"><input type="number" value={item.purchaseWeight} onChange={(event) => update(item.id, { purchaseWeight: numeric(event.target.value) })} /></Field>
               <div className="calculated-field"><span>자동계산</span><strong>{ingredientUnitCost(item.purchasePrice, item.purchaseWeight).toFixed(1)}원/g</strong></div>
             </div>
+            <AllergenEditor value={item} onChange={(change) => update(item.id, change)} />
           </article>
         ))}
       </div>
@@ -161,7 +165,7 @@ export function ToppingPanel({
 
 const SUPPLY_TITLES: Record<SupplyCategory, [string, string, string]> = {
   noodle: ["NOODLES", "사리면 설정", "기본값은 시식용 1개와 최종 제품용 1개, 학생 1명당 총 2개입니다."],
-  tasting: ["TASTING CUPS", "시식컵 설정", "4회 테스트 수량과 실제 구입 포장 단위를 입력하세요."],
+  tasting: ["TASTING CUPS", "시식컵 설정", "국물 연습과 두 번의 라면 시식에 맞게 준비 수량을 입력하세요."],
   container: ["FINAL CONTAINER", "최종 용기 설정", "학생이 집으로 가져갈 무지 라면용기 수량을 관리합니다."],
   consumable: ["CONSUMABLES", "기타 소모품", "소분팩·라벨지처럼 학생 수에 따라 늘어나는 항목입니다."],
   tool: ["TOOLS", "수업도구", "계량스푼처럼 고정 수량으로 준비하는 도구도 등록할 수 있습니다."],
@@ -225,7 +229,7 @@ export function ChecklistPanel({ settings }: { settings: AppSettings }) {
   return (
     <TeacherPanelHeading eyebrow="PREPARATION" title="준비물 자동 목록" description={`${settings.studentCount}명 기준으로 현재 사용 중인 항목만 표시합니다.`} action={<button className="teacher-primary" onClick={() => window.print()}>인쇄 / PDF</button>}>
       <div className="checklist-sheet print-target">
-        <div className="print-title"><span>라면 R&amp;D 연구소</span><h1>준비물 체크리스트</h1><p>{settings.studentCount}명 · TEST {settings.testCount}회</p></div>
+        <div className="print-title"><span>라면 R&amp;D 연구소</span><h1>준비물 체크리스트</h1><p>{settings.studentCount}명 · 라면 시식 2회 · 국물 연습 자유</p></div>
         <div className="checklist-columns">
           {groups.map((group) => <section key={group}><h2>{group}</h2>{summary.rows.filter((row) => row.category === group).map((row) => <label key={row.id}><input type="checkbox" /><span>{row.name}</span><strong>{roundQuantity(row.needed)}{row.unit}</strong></label>)}</section>)}
         </div>
@@ -236,15 +240,17 @@ export function ChecklistPanel({ settings }: { settings: AppSettings }) {
 }
 
 export function LabelsPanel({ settings, projects }: { settings: AppSettings; projects: StudentProject[] }) {
-  const eligible = projects.filter((project) => project.bestRecipeIndex !== null && project.label.productName);
-  const ingredients = settings.ingredients.filter((item) => item.enabled).sort((a, b) => a.order - b.order);
+  const eligible = projects.filter((project) => !project.notebook && project.bestRecipeIndex !== null && project.label.productName);
+  const ingredients = [...settings.ingredients].sort((a, b) => a.order - b.order);
   const finalScale = 1 / (settings.tastingNoodleFraction || 0.25);
   return (
-    <TeacherPanelHeading eyebrow="LABELS" title="학생 라벨 모아보기" description="완성한 학생 라벨을 A4 한 장에 여러 장씩 자동 배치합니다." action={<button className="teacher-primary" onClick={() => window.print()} disabled={!eligible.length}>A4 라벨 인쇄</button>}>
-      {!eligible.length ? <div className="empty-teacher"><strong>완성된 라벨이 아직 없습니다.</strong><p>학생이 BEST RECIPE와 제품명을 저장하면 여기에 나타납니다.</p></div> : (
+    <TeacherPanelHeading eyebrow="LABELS" title="학생 라벨 모아보기" description="완성한 학생 라벨을 A4 한 장에 여러 장씩 자동 배치합니다." >
+      {!eligible.length && <StickerPrintPanel projects={projects} settings={settings} />}
+      {eligible.length > 0 && <button className="teacher-primary" onClick={() => window.print()}>이전 라벨 인쇄</button>}
+      {eligible.length > 0 && (
         <div className="a4-label-sheet print-target">{eligible.map((project) => {
           const experiment = project.experiments[project.bestRecipeIndex ?? 0];
-          return <ProductLabelPreview key={project.id} project={project} ingredients={ingredients} bestExperiment={experiment} finalScale={finalScale} compact printTarget={false} />;
+          return experiment ? <ProductLabelPreview key={project.id} project={project} ingredients={ingredients} bestExperiment={experiment} finalScale={finalScale} compact printTarget={false} /> : null;
         })}</div>
       )}
     </TeacherPanelHeading>
@@ -269,7 +275,7 @@ export function PdfPanel({ settings }: { settings: AppSettings }) {
 function PrintDocument({ type, settings }: { type: "guide" | "checklist" | "cost" | "record"; settings: AppSettings }) {
   const costs = calculateCosts(settings);
   const ingredients = settings.ingredients.filter((item) => item.enabled).sort((a, b) => a.order - b.order);
-  if (type === "guide") return <div className="print-document print-target"><PrintHead title="라면 R&D 수업지도안" settings={settings} /><h2>수업 목표</h2><p>학생이 식품개발연구원의 역할을 이해하고, 4회 배합·시식·수정 과정을 통해 자신이 만족하는 제품을 완성한다.</p><div className="lesson-print-grid"><section><h2>1차시</h2><ol><li>직업 이해</li><li>라면 제조공정</li><li>스프·건더기 역할</li><li>TEST R-01</li><li>TEST R-02</li></ol></section><section><h2>2차시</h2><ol><li>TEST R-03</li><li>TEST R-04</li><li>레시피 비교·선정</li><li>최종 스프·라벨</li><li>실제 제품 포장</li></ol></section></div><h2>안전 확인</h2>{settings.safetyChecks.map((item) => <p className="print-check" key={item}>□ {item}</p>)}</div>;
+  if (type === "guide") return <div className="print-document print-target"><PrintHead title="라면 R&D 수업지도안" settings={settings} /><h2>수업 목표</h2><p>학생이 식품개발연구원의 역할을 이해하고, 국물 배합 연습과 두 번의 라면 시식을 통해 자신이 만족하는 제품을 완성한다.</p><div className="lesson-print-grid"><section><h2>1차시</h2><ol><li>직업 이해</li><li>라면 제조공정</li><li>스프·건더기 역할</li><li>기본 베이스 국물 연습</li><li>라면사리 시식 1회</li></ol></section><section><h2>2차시</h2><ol><li>시판 스프 국물 연습</li><li>라면사리 시식 1회</li><li>마음에 드는 레시피 선택</li><li>최종 스프·라벨</li><li>실제 제품 포장</li></ol></section></div><h2>안전 확인</h2>{settings.safetyChecks.map((item) => <p className="print-check" key={item}>□ {item}</p>)}</div>;
   if (type === "checklist") return <div className="print-document print-target"><PrintHead title="준비물 체크리스트" settings={settings} />{(["식재료", "용기·소모품", "수업도구"] as const).map((group) => <section key={group}><h2>{group}</h2>{costs.rows.filter((row) => row.category === group).map((row) => <p className="print-check" key={row.id}>□ {row.name} <strong>{roundQuantity(row.needed)}{row.unit}</strong></p>)}</section>)}</div>;
   if (type === "cost") return <div className="print-document print-target"><PrintHead title="원가계산표" settings={settings} /><div className="print-cost-summary"><span>1인 {won(costs.perStudentCost)}</span><span>사용원가 {won(costs.usedCost)}</span><span>준비비용 {won(costs.purchaseCost)}</span></div><CostTable settings={settings} count={settings.studentCount} printable /></div>;
   return <div className="print-document print-target"><PrintHead title="학생용 실험 기록지" settings={settings} /><p>연구원명 ____________________　개발팀 ____________________</p><table className="print-record-table"><thead><tr><th>재료</th>{Array.from({ length: settings.testCount }, (_, index) => <th key={index}>R-{String(index + 1).padStart(2, "0")}</th>)}</tr></thead><tbody>{ingredients.map((item) => <tr key={item.id}><th>{item.displayName}</th>{Array.from({ length: settings.testCount }, (_, index) => <td key={index}>　　　 g</td>)}</tr>)}<tr><th>시식 메모</th>{Array.from({ length: settings.testCount }, (_, index) => <td key={index} className="memo-cell" />)}</tr></tbody></table><h2>BEST RECIPE</h2><p>선택: R-　　　제품명: ______________________________</p></div>;
