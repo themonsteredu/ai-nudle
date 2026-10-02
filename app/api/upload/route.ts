@@ -13,7 +13,7 @@ const ALLOWED_TYPES = new Map([
 const MAX_BYTES = 4 * 1024 * 1024;
 
 export async function POST(request: Request) {
-  if (!isTeacherRequest(request)) {
+  if (!(await isTeacherRequest(request))) {
     return Response.json({ error: "교사 인증이 필요합니다." }, { status: 401 });
   }
 

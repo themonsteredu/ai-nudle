@@ -1,4 +1,11 @@
-export type Ingredient = {
+export type AllergenInfo = {
+  allergens?: string[];
+  allergenOther?: string;
+  allergenChecked?: boolean;
+  facilityNote?: string;
+};
+
+export type Ingredient = AllergenInfo & {
   id: string;
   name: string;
   displayName: string;
@@ -15,7 +22,7 @@ export type Ingredient = {
   order: number;
 };
 
-export type Topping = {
+export type Topping = AllergenInfo & {
   id: string;
   name: string;
   displayName: string;
@@ -51,6 +58,10 @@ export type SupplyItem = {
 
 export type AppSettings = {
   version: number;
+  notebookVersion?: number;
+  classes?: LessonClass[];
+  comparisonSoups?: ComparisonSoup[];
+  noodleAllergens?: AllergenInfo;
   className: string;
   studentCount: number;
   testCount: number;
@@ -77,6 +88,11 @@ export type ProductLabel = {
 
 export type StudentProject = {
   id: string;
+  classId?: string;
+  researcherNumber?: number;
+  revision?: number;
+  createdAt?: string;
+  notebook?: Notebook;
   studentName: string;
   teamName: string;
   experiments: Experiment[];
@@ -102,4 +118,46 @@ export type CostSummary = {
   usedCost: number;
   purchaseCost: number;
   perStudentCost: number;
+};
+
+export type LessonClass = {
+  id: string;
+  name: string;
+  code: string;
+  waterMl: number;
+  cookMinutes: number;
+  noodleFraction: number;
+};
+export type ComparisonSoup = AllergenInfo & { id: string; name: string; enabled: boolean };
+export type RecipeMethod = "base" | "commercial";
+export type RecipeItem = AllergenInfo & { id: string; name: string; amount: number; category: string };
+export type RecipeRecord = {
+  id: string;
+  items: RecipeItem[];
+  note: string;
+  waterMl: number;
+  cookMinutes: number;
+  noodleFraction: number;
+  createdAt: string;
+  updatedAt: string;
+};
+export type MethodNotebook = {
+  practices: RecipeRecord[];
+  tasting?: RecipeRecord;
+  tastingHistory: RecipeRecord[];
+};
+export type Notebook = {
+  base: MethodNotebook;
+  commercial: MethodNotebook;
+  comparisons: Record<string, string>;
+  final?: {
+    method: RecipeMethod;
+    record: RecipeRecord;
+    productName: string;
+    tasteLine: string;
+    keywords: string[];
+    spicyLevel: number;
+    savedAt: string;
+    shared: boolean;
+  };
 };

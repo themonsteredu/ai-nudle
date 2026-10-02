@@ -20,12 +20,13 @@ export async function ensureDatabase() {
       data_json TEXT NOT NULL,
       updated_at TEXT DEFAULT CURRENT_TIMESTAMP NOT NULL
     )`),
+    d1.prepare(`CREATE INDEX IF NOT EXISTS student_projects_class_idx ON student_projects(team_name)`),
     d1.prepare(`CREATE TABLE IF NOT EXISTS media_assets (
       key TEXT PRIMARY KEY NOT NULL,
       file_name TEXT NOT NULL,
       content_type TEXT NOT NULL,
       created_at TEXT DEFAULT CURRENT_TIMESTAMP NOT NULL
     )`),
-  ]);
+  ]).catch((error: unknown) => { initialization = null; throw error; });
   return initialization;
 }

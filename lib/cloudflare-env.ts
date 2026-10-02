@@ -18,12 +18,7 @@ type CloudflareWorkersModule = {
   };
 };
 
-const runtimeImport = new Function(
-  "specifier",
-  "return import(specifier)",
-) as (specifier: string) => Promise<CloudflareWorkersModule>;
-
 export async function getCloudflareEnv() {
-  const workersModule = await runtimeImport("cloudflare:workers");
+  const workersModule = await import(/* webpackIgnore: true */ "cloudflare:workers") as CloudflareWorkersModule;
   return workersModule.env;
 }

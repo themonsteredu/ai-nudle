@@ -1,3 +1,6 @@
+@font-face { font-family:"S-Core Dream"; src:url("/fonts/S-CoreDream-4Regular.woff") format("woff"); font-weight:100 500; font-style:normal; font-display:swap; }
+@font-face { font-family:"S-Core Dream"; src:url("/fonts/S-CoreDream-6Bold.woff") format("woff"); font-weight:600 700; font-style:normal; font-display:swap; }
+@font-face { font-family:"S-Core Dream"; src:url("/fonts/S-CoreDream-8Heavy.woff") format("woff"); font-weight:800 900; font-style:normal; font-display:swap; }
 :root {
   --cream: #fbf6ea;
   --cream-deep: #f2e8d4;
@@ -394,3 +397,170 @@ body { font-size: 17px; line-height: 1.55; }
   .cost-table th, .cost-table td { padding: 2mm !important; font-size: 7pt !important; }
   .teacher-panel-head, .document-tabs { display: none !important; }
 }
+
+/* Recipe notebook — retain the existing cream, orange and S-Core Dream theme. */
+h1,h2,h3,p,li,button,label,summary { word-break:keep-all; overflow-wrap:anywhere; }
+.notebook-cover .cover-copy h1 { white-space:normal; line-height:1.15; }
+.join-class { display:flex; flex-wrap:wrap; align-items:end; gap:14px; margin-top:30px; }
+.join-class label { display:grid; gap:8px; flex:1; min-width:210px; }
+.join-class input,.notebook-content input,.notebook-content select,.sticker-toolbar input,.sticker-toolbar select,.class-picker select,.career-slide-jumps select { border:1px solid var(--line); border-radius:10px; min-height:46px; padding:10px 12px; background:var(--paper); color:var(--brown); max-width:100%; }
+.join-class input { width:100%; letter-spacing:.06em; }
+.notebook-session { margin-top:auto; padding:22px 10px; }
+.notebook-session p { color:var(--muted); font-size:13px; }
+.notebook-session button { display:block; border:0; background:none; padding:9px 0; font-size:12px; cursor:pointer; }
+.notebook-shell .student-topbar { min-height:76px; height:auto; gap:16px; padding-block:14px; }
+.save-status { font-size:12px; line-height:1.6; color:var(--brown-2); }
+.notebook-content { max-width:1100px; }
+.lesson-settings,.record-water { background:var(--cream-deep); padding:12px 16px; line-height:1.7; border-radius:8px; font-size:14px; }
+.record-water button { margin-left:14px; border:1px solid var(--line); padding:5px 10px; background:var(--paper); border-radius:5px; }
+.notebook-record-nav,.tasting-entry { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px; padding:22px 0 12px; }
+.notebook-record-nav h2,.tasting-entry h2 { margin:0 0 8px; font-size:23px; }
+.notebook-record-nav p,.tasting-entry p { margin:0; color:var(--brown-2); font-size:14px; }
+.notebook-record-nav button,.tasting-entry button,.sticker-toolbar button,.career-slide-jumps button,.privacy-toggle { border:1px solid var(--line); padding:12px 18px; border-radius:10px; background:var(--paper); cursor:pointer; }
+.record-pills { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:20px; }
+.record-pills button,.taste-keywords button { border:1px solid var(--line); background:var(--paper); border-radius:8px; padding:10px 16px; cursor:pointer; }
+.record-pills button.active,.taste-keywords button.active { color:white; border-color:var(--orange); background:var(--orange); }
+.tasting-entry { border-block:1px solid var(--line); padding-block:20px; margin-bottom:24px; }
+.recipe-editor { border-top:4px solid var(--orange); padding:26px 0; }
+.recipe-editor header h2 { font-size:29px; margin:6px 0; }
+.recipe-editor header p { color:var(--brown-2); line-height:1.7; }
+.gram-rows { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:0 32px; }
+.gram-row { display:flex; align-items:center; justify-content:space-between; gap:14px; padding:18px 0; border-bottom:1px solid var(--line); }
+.gram-row small,.gram-row strong,.gram-row em { display:block; }
+.gram-row small { color:var(--muted); font-size:10px; }
+.gram-row strong { font-size:17px; margin:4px 0; }
+.gram-row em { font-size:11px; font-style:normal; color:var(--brown-2); }
+.gram-input { display:flex; align-items:center; gap:7px; flex:none; }
+.gram-input input { width:87px; font-size:18px; text-align:right; }
+.taste-note { display:block; margin:28px 0; }
+.taste-note strong { display:block; margin-bottom:10px; font-size:18px; }
+.taste-note input { width:100%; font-size:17px; min-height:56px; }
+.recipe-allergens { padding:16px 20px; background:#fff1d9; border-left:4px solid var(--orange); color:var(--brown); margin:18px 0; }
+.recipe-allergens strong { font-size:16px; }
+.recipe-allergens p { margin:7px 0 0; font-size:14px; line-height:1.6; }
+.recipe-allergens .unverified { font-weight:700; }
+.recipe-allergens .facility-note { font-size:12px; }
+.special-tip,.historical-ingredients { line-height:1.7; border-left:3px solid var(--orange); padding:12px 18px; background:var(--orange-soft); }
+.practice-history,.comparison-notes,.slide-teacher-notes { margin:22px 0; border-block:1px solid var(--line); padding:16px 0; }
+summary { cursor:pointer; font-weight:700; line-height:1.6; }
+.comparison-notes label { margin:15px 0; }
+.recipe-readout { padding:18px 0; }
+.recipe-readout h3 { font-size:24px; margin:0 0 18px; }
+.recipe-readout dl,.class-recipes dl { margin:16px 0; }
+.recipe-readout dl>div,.class-recipes dl>div { display:flex; justify-content:space-between; gap:18px; padding:9px 0; border-bottom:1px solid var(--line); }
+.recipe-readout dt { min-width:0; }
+.recipe-readout dd,.class-recipes dd { white-space:nowrap; margin:0; font-weight:800; }
+.recipe-readout blockquote,.class-recipes blockquote { margin:24px 0; font-size:22px; line-height:1.6; font-weight:700; }
+.empty-record { padding:40px 12px; color:var(--muted); }
+.final-notebook .label-fields { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+.taste-keywords { margin:24px 0; }
+.taste-keywords>div { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+.class-recipes { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:28px; }
+.class-recipes>article { border-block:1px solid var(--line); padding:22px 0; }
+.class-recipes>article>span { color:var(--muted); font-size:13px; }
+.class-recipes h2 { margin-bottom:10px; }
+.class-picker { display:flex; flex-wrap:wrap; align-items:center; gap:10px; font-size:12px; }
+.class-picker select { max-width:360px; }
+.class-setting-fields { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+.class-setting-fields>p { grid-column:1/-1; }
+.class-code { display:grid; gap:8px; align-content:center; padding:15px 24px; background:var(--cream-deep); border-radius:10px; }
+.class-code span { font-size:12px; }
+.class-code strong { font-size:30px; letter-spacing:.12em; }
+.comparison-admin { margin:20px 0 32px; padding:20px; border:1px solid var(--line); border-radius:12px; }
+.allergen-editor { border:1px solid var(--line); padding:20px; margin:20px 0 0; min-width:0; }
+.allergen-editor legend { font-weight:800; font-size:14px; }
+.allergen-editor p { font-size:12px; color:var(--brown-2); }
+.allergen-options { display:flex; flex-wrap:wrap; gap:12px 20px; margin:16px 0; }
+.allergen-options label,.allergen-checked { display:flex; align-items:center; gap:6px; font-size:14px; }
+.allergen-editor input[type=checkbox] { width:18px; height:18px; accent-color:var(--orange); }
+.allergen-editor .admin-field { margin:14px 0; }
+.allergen-checked { margin:16px 0; }
+.allergen-editor>strong { font-size:12px; color:var(--orange-deep); }
+.student-recipe-list { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:14px; margin:26px 0; }
+.student-recipe-list button { text-align:left; padding:24px 20px; border:1px solid var(--line); background:var(--paper); border-radius:12px; cursor:pointer; }
+.student-recipe-list strong,.student-recipe-list span { display:block; }
+.student-recipe-list span { margin-top:10px; color:var(--muted); font-size:13px; }
+.lesson-fullscreen { position:fixed; inset:0; z-index:1000; background:var(--cream); color:var(--brown); overflow-y:auto; width:100%; height:100%; padding:20px clamp(18px,3vw,56px); }
+.fullscreen-top { display:flex; justify-content:space-between; gap:18px; align-items:center; padding:0 0 18px; border-bottom:1px solid var(--line); }
+.fullscreen-top button,.recipe-presentation header button { border:1px solid var(--line); border-radius:8px; background:var(--paper); padding:10px 16px; cursor:pointer; }
+.recipe-presentation { max-width:1800px; margin:auto; }
+.recipe-presentation>header { display:flex; justify-content:space-between; gap:18px; padding:24px 0 6px; align-items:center; }
+.recipe-presentation>header h1 { font-size:clamp(32px,3.6vw,62px); margin:6px 0; }
+.recipe-presentation>header>div:last-child { display:flex; gap:10px; }
+.two-recipes { display:grid; grid-template-columns:1fr 1fr; gap:48px; }
+.two-recipes>div { min-width:0; }
+.two-recipes>div+div { border-left:1px solid var(--line); padding-left:48px; }
+.recipe-presentation .recipe-readout h3 { font-size:clamp(24px,2.3vw,40px); }
+.recipe-presentation .recipe-readout dl { font-size:clamp(20px,1.85vw,34px); }
+.recipe-presentation .recipe-readout blockquote { font-size:clamp(23px,2.15vw,40px); }
+.recipe-presentation .record-water,.recipe-presentation .lesson-settings { font-size:clamp(16px,1.3vw,24px); }
+.recipe-presentation .recipe-allergens p { font-size:clamp(15px,1.15vw,23px); }
+.presentation-navigation { position:sticky; bottom:0; display:flex; align-items:center; justify-content:center; gap:30px; padding:16px; background:var(--cream); border-top:1px solid var(--line); }
+.presentation-navigation button { border:1px solid var(--line); border-radius:9px; background:var(--paper); padding:15px 24px; font-size:18px; cursor:pointer; }
+.career-slide-jumps { display:flex; align-items:end; flex-wrap:wrap; gap:16px; margin-bottom:20px; }
+.career-slide-jumps label { display:grid; gap:8px; max-width:100%; }
+.career-slide { display:grid; grid-template-columns:minmax(0,1.4fr) minmax(0,.6fr); gap:28px; padding:30px; background:var(--paper); }
+.career-slide h2 { margin:12px 0 18px; font-size:clamp(26px,3vw,54px); line-height:1.35; }
+.career-headline { font-size:clamp(18px,1.75vw,30px); line-height:1.65; font-weight:700; }
+.career-slide ul { padding-left:1.2em; margin:25px 0; }
+.career-slide li { margin:14px 0; font-size:clamp(17px,1.65vw,29px); line-height:1.7; }
+.career-slide blockquote { margin:22px 0; border-left:4px solid var(--orange); padding:12px 18px; font-size:clamp(16px,1.45vw,25px); line-height:1.7; background:var(--cream-deep); }
+.career-slide-image { display:flex; flex-direction:column; min-width:0; align-self:stretch; }
+.career-slide-image img { width:100%; height:100%; max-height:560px; object-fit:cover; border-radius:12px; }
+.career-slide-image span { margin-top:12px; font-size:11px; color:var(--muted); }
+.slide-source { display:flex; flex-wrap:wrap; gap:6px 12px; color:var(--brown-2); font-size:11px; line-height:1.6; }
+.slide-source a { text-decoration:underline; }
+.slide-teacher-notes p { line-height:1.8; font-size:14px; }
+.fullscreen-career { margin:18px auto; max-width:1700px; }
+.fullscreen-career .presenter-controls { position:sticky; bottom:0; background:var(--paper); }
+.sticker-toolbar { display:flex; flex-wrap:wrap; align-items:end; gap:16px; margin:28px 0 18px; }
+.sticker-toolbar label { display:grid; gap:8px; font-size:13px; }
+.sticker-sheet { display:grid; grid-template-columns:repeat(2,90mm); gap:8mm; justify-content:start; margin-top:26px; }
+.product-sticker { width:90mm; height:90mm; overflow:hidden; border:1px dashed #806a59; background:#fffdf8; color:#3d261a; padding:9mm; display:flex; flex-direction:column; text-align:center; break-inside:avoid; font-family:var(--font); }
+.product-sticker.circle { border-radius:50%; padding:10mm 12mm; }
+.sticker-eyebrow { font-size:8pt; letter-spacing:.1em; }
+.sticker-front h2 { font-size:18pt; margin:3mm 0 2mm; line-height:1.25; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.sticker-front>p { font-size:9pt; line-height:1.45; margin:0; }
+.drawing-space { flex:1; min-height:16mm; border:1px dotted #cebdac; margin:3mm 0; display:flex; align-items:center; justify-content:center; color:#a38c7a; font-size:8pt; }
+.pepper-level { display:flex; align-items:center; justify-content:center; gap:2mm; }
+.pepper-level span { font-size:8pt; }
+.sticker-keywords { font-size:9pt; margin-top:2mm; }
+.product-sticker>small { font-size:6.5pt; margin-top:2mm; }
+.sticker-back { text-align:left; font-size:8pt; line-height:1.45; }
+.sticker-back h3 { margin:0 0 2mm; text-align:center; font-size:12pt; }
+.sticker-back section { margin:1.4mm 0; }
+.sticker-back p { margin:0; overflow-wrap:anywhere; word-break:normal; }
+.sticker-back b { font-size:8.5pt; }
+.sticker-allergens { background:#fff0d8; padding:1.5mm; }
+.sticker-back footer { margin-top:auto; font-size:7pt; }
+@media(max-width:1100px) { .sticker-sheet { grid-template-columns:90mm; } .gram-rows { gap:0 18px; } .teacher-topbar { height:auto; min-height:78px; gap:16px; padding-block:15px; } .class-picker select { max-width:240px; } }
+@media(max-width:800px) { .gram-rows,.class-recipes,.class-setting-fields,.final-notebook .label-fields { grid-template-columns:1fr; } .career-slide { grid-template-columns:1fr; padding:22px; } .career-slide-image { display:none; } .two-recipes { gap:22px; } .two-recipes>div+div { padding-left:22px; } .notebook-session { display:flex; flex-wrap:wrap; align-items:center; gap:12px; padding:10px 0; } .notebook-session strong,.notebook-session p { display:none; } .notebook-shell .student-sidebar { height:auto; } .notebook-shell .student-topbar { flex-wrap:wrap; } }
+@media(max-width:580px) { .notebook-content { width:calc(100% - 32px); padding-top:26px; } .two-recipes { grid-template-columns:1fr; } .two-recipes>div+div { border-left:0; padding-left:0; border-top:1px solid var(--line); } .recipe-presentation>header { align-items:start; flex-direction:column; } .lesson-fullscreen { padding:14px; } .fullscreen-top { font-size:13px; } .presentation-navigation { gap:10px; } .presentation-navigation button { padding:12px; font-size:14px; } .sticker-sheet { transform-origin:top left; zoom:.85; } .teacher-topbar { align-items:start; flex-direction:column; } .join-class { display:grid; } }
+@media print {
+  @page { size:A4 portrait; margin:10mm; }
+  body:has(.sticker-sheet) * { visibility:hidden; }
+  body:has(.sticker-sheet) .sticker-sheet,body:has(.sticker-sheet) .sticker-sheet * { visibility:visible; }
+  body:has(.sticker-sheet) .sticker-sheet { position:absolute !important; top:0 !important; left:0 !important; display:grid !important; grid-template-columns:90mm 90mm !important; gap:8mm !important; width:188mm !important; margin:0 !important; padding:0 !important; zoom:1 !important; transform:none !important; }
+  .product-sticker { break-inside:avoid; page-break-inside:avoid; print-color-adjust:exact; -webkit-print-color-adjust:exact; }
+  .product-sticker:nth-child(4n) { break-after:page; }
+  .sticker-toolbar,.sticker-print-panel>details { display:none !important; }
+}
+/* Explicit contrast for the light career slides inside the dark legacy presenter. */
+.career-slide { color:var(--brown); }
+.fullscreen-career .presenter-controls { background:var(--brown); }
+@media print {
+  html:has(.sticker-sheet), body:has(.sticker-sheet) { width:auto !important; min-height:0 !important; height:auto !important; }
+  body:has(.sticker-sheet) *:not(.sticker-sheet):not(.sticker-sheet *):not(:has(.sticker-sheet)) { display:none !important; }
+  body:has(.sticker-sheet) *:has(.sticker-sheet) { position:static !important; display:block !important; width:auto !important; height:auto !important; min-height:0 !important; padding:0 !important; margin:0 !important; border:0 !important; transform:none !important; }
+  body:has(.sticker-sheet) .sticker-sheet { position:static !important; }
+  .product-sticker:nth-child(4n) { break-after:auto; }
+}
+/* Keep all round-label content within the circle's inscribed square. */
+.product-sticker.circle { padding:14mm; }
+.sticker-front h2 { display:block; overflow:visible; -webkit-line-clamp:unset; margin-top:2mm; }
+.sticker-front>p { font-size:8pt; line-height:1.4; }
+.sticker-back { font-size:7.5pt; line-height:1.35; }
+.sticker-back h3 { font-size:10pt; line-height:1.3; }
+.sticker-back b { font-size:8pt; }
+.sticker-back footer { text-align:center; font-size:6.5pt; }
+.drawing-space { min-height:14mm; }
