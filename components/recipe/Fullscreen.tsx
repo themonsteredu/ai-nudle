@@ -26,7 +26,7 @@ export function Fullscreen({ title, close, previous, next, children }: { title: 
       if (e.key === "ArrowLeft") { e.preventDefault(); prevRef.current?.(); }
       if (e.key === "ArrowRight") { e.preventDefault(); nextRef.current?.(); }
       if (e.key === "Tab" && element) {
-        const list = Array.from(element.querySelectorAll<HTMLElement>('button:not(:disabled), a[href], input, select, textarea, summary, [tabindex="0"]')).filter((x) => x.offsetParent !== null);
+        const list = Array.from(element.querySelectorAll<HTMLElement>('button:not(:disabled), a[href], input, select, textarea, summary, iframe, [tabindex="0"]')).filter((x) => x.offsetParent !== null);
         if (!list.length) { e.preventDefault(); element.focus(); }
         else if (e.shiftKey && (document.activeElement === list[0] || document.activeElement === element)) { e.preventDefault(); list[list.length-1].focus(); }
         else if (!e.shiftKey && document.activeElement === list[list.length-1]) { e.preventDefault(); list[0].focus(); }
