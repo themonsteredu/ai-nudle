@@ -10,8 +10,14 @@ const out = path.resolve("outputs/verification/career");
 fs.mkdirSync(out, { recursive: true });
 (async () => {
   const { CAREER_SLIDES, CAREER_DURATION_SECONDS } = await import("../lib/career-slides.ts");
-  assert.equal(CAREER_DURATION_SECONDS, 600);
-  assert.equal(CAREER_SLIDES.length, 13);
+  assert.equal(CAREER_DURATION_SECONDS, 640);
+  assert.equal(CAREER_SLIDES.length, 14);
+  const photos = CAREER_SLIDES.filter(s => s.visual === "photo").map(s => s.image);
+  assert.equal(photos.length, 5);
+  assert.equal(new Set(photos).size, photos.length, "Do not repeat photos");
+  assert(CAREER_SLIDES.every(s => s.details.length === s.points.length && s.example.text));
+  assert.equal(CAREER_SLIDES.find(s => s.video).image, undefined);
+  const slideIndex = id => String(CAREER_SLIDES.findIndex(s => s.id === id));
   const api = await request.newContext({ baseURL: origin });
   assert.equal((await api.post("/api/teacher/login", { data: { password: "3035" } })).status(), 200);
   const browser = await chromium.launch({ executablePath: process.env.CHROME_PATH, headless: true, args: ["--no-sandbox"] });
@@ -22,7 +28,7 @@ fs.mkdirSync(out, { recursive: true });
   page.on("pageerror", error => errors.push(error.message));
   await page.goto(origin + "/teacher");
   await page.getByRole("button", { name: "직업소개·공정시연", exact: true }).click();
-  assert.equal(await page.getByLabel("발표 장면", { exact: true }).locator("option").count(), 22);
+  assert.equal(await page.getByLabel("발표 장면", { exact: true }).locator("option").count(), CAREER_SLIDES.length + 9);
   await page.getByRole("button", { name: "직업 소개부터 전체화면", exact: true }).click();
   await page.getByRole("dialog").waitFor();
   assert.equal(await page.locator(".career-reveal.shown").count(), 0);
@@ -39,7 +45,7 @@ fs.mkdirSync(out, { recursive: true });
   await page.waitForFunction(() => [...document.querySelectorAll(".career-reveal.shown, .career-title-enter")].every(e => getComputedStyle(e).opacity === "1"));
   await page.screenshot({ path: path.join(out, "career-projector.png") });
   await page.keyboard.press("ArrowRight");
-  await page.waitForFunction(() => document.querySelector(".career-slide h2")?.textContent.includes("무슨 일"));
+  await page.waitForFunction(title => document.querySelector(".career-slide h2")?.textContent === title, CAREER_SLIDES[1].title);
   assert.equal(await page.locator(".career-reveal.shown").count(), 0);
   await page.getByRole("button", { name: "내용 모두 보기", exact: true }).click();
   assert.equal(await page.locator(".career-reveal.shown").count(), 4);
@@ -52,19 +58,28 @@ fs.mkdirSync(out, { recursive: true });
   await page.getByRole("dialog").waitFor({ state: "hidden" });
   assert.equal(await page.evaluate(() => document.body.style.overflow), "");
 
-  // Every career scene has readable material, a working image and a speaker note.
+  // Every scene has supporting detail, a distinct visual, an example and speaker notes.
   for (let i = 0; i < CAREER_SLIDES.length; i++) {
     await page.getByLabel("발표 장면", { exact: true }).selectOption(String(i));
     await page.getByRole("button", { name: "내용 모두 보기", exact: true }).click();
     assert.equal(await page.locator(".career-slide h2").innerText(), CAREER_SLIDES[i].title);
     assert.equal(await page.locator(".career-reveal.shown").count(), 4);
+    assert.deepEqual(await page.locator(".career-point-detail").allTextContents(), CAREER_SLIDES[i].details);
+    assert.equal(await page.locator(".career-example p").innerText(), CAREER_SLIDES[i].example.text);
+    assert.equal(await page.locator(".career-visual").getAttribute("data-visual"), CAREER_SLIDES[i].visual);
     await page.locator(".career-speaking-notes summary").click();
     assert.equal(await page.locator(".career-speaking-notes p").count(), 2);
     await page.waitForFunction(() => [...document.querySelectorAll(".career-slide img")].every(i => i.complete && i.naturalWidth > 0));
     assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), "Desktop overflow on slide " + i);
+    await page.locator(".career-speaking-notes summary").click();
+    await page.getByRole("button", { name: "현재 장면 전체화면", exact: true }).click();
+    await page.waitForFunction(() => [...document.querySelectorAll(".career-reveal.shown, .career-title-enter")].every(e => getComputedStyle(e).opacity === "1"));
+    assert(await page.locator(".career-slide").evaluate(el => el.getBoundingClientRect().bottom < innerHeight - 55), "Projector slide should fit: " + i);
+    await page.screenshot({ path: path.join(out, "slide-" + String(i + 1).padStart(2, "0") + ".png") });
+    await page.keyboard.press("Escape");
   }
   // The player must not load before teacher action; it must be destroyed on close/navigation.
-  await page.getByLabel("발표 장면", { exact: true }).selectOption("7");
+  await page.getByLabel("발표 장면", { exact: true }).selectOption(slideIndex("video"));
   assert.equal(await page.locator(".career-video-frame iframe").count(), 0);
   await page.getByRole("button", { name: "현재 장면 전체화면", exact: true }).click();
   await page.getByRole("button", { name: "영상 불러오기", exact: true }).click();
@@ -75,7 +90,7 @@ fs.mkdirSync(out, { recursive: true });
   await page.getByRole("button", { name: "다음 장", exact: true }).click();
   assert.equal(await page.locator(".career-video-frame iframe").count(), 0);
   await page.keyboard.press("Escape");
-  await page.getByLabel("발표 장면", { exact: true }).selectOption("7");
+  await page.getByLabel("발표 장면", { exact: true }).selectOption(slideIndex("video"));
   await page.getByRole("button", { name: "현재 장면 전체화면", exact: true }).click();
   await page.getByRole("button", { name: "영상 불러오기", exact: true }).click();
   await page.getByRole("button", { name: "닫기 (ESC)", exact: true }).click();
@@ -85,7 +100,7 @@ fs.mkdirSync(out, { recursive: true });
 
   for (const [label, width, height] of [["laptop", 1366, 768], ["tablet", 768, 1024], ["phone", 390, 844]]) {
     await page.setViewportSize({ width, height });
-    await page.getByLabel("발표 장면", { exact: true }).selectOption("9");
+    await page.getByLabel("발표 장면", { exact: true }).selectOption(slideIndex("team"));
     await page.getByRole("button", { name: "현재 장면 전체화면", exact: true }).click();
     await page.getByRole("button", { name: "내용 모두 보기", exact: true }).click();
     await page.evaluate(() => document.fonts.ready);
@@ -98,19 +113,31 @@ fs.mkdirSync(out, { recursive: true });
     await page.screenshot({ path: path.join(out, "career-" + label + ".png"), fullPage: true });
     await page.getByRole("button", { name: "닫기 (ESC)", exact: true }).click();
   }
+  for (const scene of CAREER_SLIDES.filter(s => s.visual !== "photo")) {
+    await page.getByLabel("발표 장면", { exact: true }).selectOption(slideIndex(scene.id));
+    await page.getByRole("button", { name: "현재 장면 전체화면", exact: true }).click();
+    await page.getByRole("button", { name: "내용 모두 보기", exact: true }).click();
+    assert(await page.locator(".lesson-fullscreen").evaluate(d => d.scrollWidth <= d.clientWidth + 1), "Phone diagram overflow: " + scene.id);
+    if (scene.id === "record") {
+      assert.equal(await page.locator(".career-changed-row").count(), 1);
+      assert.match(await page.locator(".career-recipe-example caption").innerText(), /권장 투입량 아님/);
+      await page.locator(".career-recipe-example").screenshot({ path: path.join(out, "recipe-phone.png") });
+    }
+    await page.getByRole("button", { name: "닫기 (ESC)", exact: true }).click();
+  }
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.getByLabel("발표 장면", { exact: true }).selectOption("0");
   assert.equal(await page.locator(".career-title-enter").evaluate(e => getComputedStyle(e).animationName), "none");
   assert.equal(await page.locator(".career-reveal").first().evaluate(e => getComputedStyle(e).transitionDuration), "0s");
   // Existing nine factory scenes and timed video demonstration still work.
-  await page.getByLabel("발표 장면", { exact: true }).selectOption("13");
+  await page.getByLabel("발표 장면", { exact: true }).selectOption(String(CAREER_SLIDES.length));
   await page.getByRole("button", { name: "자동 시연 시작", exact: true }).click();
   await page.waitForFunction(() => document.querySelector(".presenter-script>span")?.textContent === "공정 2", { timeout: 8000 });
   await page.getByRole("button", { name: "시연 일시정지", exact: true }).click();
-  await page.getByLabel("발표 장면", { exact: true }).selectOption("21");
+  await page.getByLabel("발표 장면", { exact: true }).selectOption(String(CAREER_SLIDES.length + 8));
   assert(await page.getByRole("button", { name: "다음 장", exact: true }).isDisabled());
   assert.deepEqual(errors, []);
-  fs.writeFileSync(path.join(out, "results.json"), JSON.stringify({ status: "PASS", slides: 13, durationSeconds: 600, checks: ["manual reveal and back", "show all and replay", "swipe and ESC", "all scenes, notes and images", "on-demand official player and teardown", "video fallback", "projector/laptop/tablet/phone", "reduced motion", "existing factory autoplay"], note: "External streaming availability depends on school network; no claim of verifying the full remote video." }, null, 2));
+  fs.writeFileSync(path.join(out, "results.json"), JSON.stringify({ status: "PASS", slides: 14, uniquePhotos: 5, durationSeconds: 640, checks: ["manual reveal and back", "show all and replay", "swipe and ESC", "14 distinct scenes with details, examples and notes", "five unique photos", "all projector slides fit", "on-demand official player and teardown", "video fallback", "projector/laptop/tablet/phone", "reduced motion", "existing factory autoplay"], note: "External streaming availability depends on school network; no claim of verifying the full remote video." }, null, 2));
   await browser.close();
   await api.dispose();
   console.log("PASS: career presentation interactions, media lifecycle, responsive layout and factory regression");

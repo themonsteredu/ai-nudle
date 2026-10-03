@@ -1,40 +1,13 @@
 "use client";
 import { useEffect, useState } from "react";
-import Image from "next/image";
+import { CareerSlideVisual } from "./CareerSlideVisual";
 import { FactoryMotionScene } from "@/components/process/FactoryMotionScene";
 import { RAMEN_PROCESS_STEPS } from "@/lib/ramen-process";
-import { CAREER_SLIDES, CAREER_SOURCES, CAREER_VIDEO, CAREER_DURATION_SECONDS, formatCareerTime, type CareerSlide } from "@/lib/career-slides";
+import { CAREER_SLIDES, CAREER_SOURCES, CAREER_DURATION_SECONDS, formatCareerTime, type CareerSlide } from "@/lib/career-slides";
 import { Fullscreen } from "../recipe/Fullscreen";
 
 const TOTAL = CAREER_SLIDES.length + RAMEN_PROCESS_STEPS.length;
 const revealCount = (index: number) => (CAREER_SLIDES[index]?.points.length ?? 0) + 1;
-
-function CareerVisual({ slide }: { slide: CareerSlide }) {
-  const [videoOpen, setVideoOpen] = useState(false);
-  return <aside className="career-visual">
-    {slide.video ? <>
-      <div className="career-video-frame">
-        {videoOpen ? <iframe
-          src={CAREER_VIDEO.embedUrl}
-          title={CAREER_VIDEO.title}
-          allow="encrypted-media; picture-in-picture; fullscreen"
-          referrerPolicy="strict-origin-when-cross-origin"
-          allowFullScreen
-        /> : <div className="career-video-poster">
-          <Image src={slide.image} alt="" fill sizes="(max-width: 800px) 100vw, 45vw" />
-          <div><span>한국식품연구원</span><strong>실제 연구 현장 만나기</strong><button onClick={() => setVideoOpen(true)}>영상 불러오기</button><small>불러온 뒤 재생을 눌러 주세요 · 약 1분 시청</small></div>
-        </div>}
-      </div>
-      <div className="career-video-links">
-        {videoOpen && <button onClick={() => setVideoOpen(false)}>영상 닫기</button>}
-        <a href={CAREER_VIDEO.watchUrl} target="_blank" rel="noreferrer">YouTube에서 보기</a>
-        <a href={CAREER_VIDEO.sourceUrl} target="_blank" rel="noreferrer">공식 게시 페이지</a>
-      </div>
-      <details className="career-video-fallback"><summary>재생이 안 되나요? 영상 대신 설명</summary><p>한국식품연구원은 식품의 기능과 품질·안전 등을 연구합니다. 공식 소개에는 무균포장 즉석밥과 한국형 우주식품 같은 연구 성과가 나옵니다.</p><p>“음식을 오래 보관하거나 특별한 환경에서 먹으려면 무엇을 연구해야 할까요?”라고 함께 이야기해 보세요.</p></details>
-    </> : <figure className="career-photo"><Image src={slide.image} alt={slide.imageAlt} width={1536} height={1024} sizes="(max-width: 800px) 100vw, 45vw" /><figcaption>수업용 생성 이미지 · 실제 기관 촬영 사진이 아닙니다</figcaption></figure>}
-    <div className="career-visual-caption"><span>{slide.visualLabel}</span><div>{slide.visualWords.map((word, i) => <strong key={word}><small>{String(i + 1).padStart(2, "0")}</small>{word}</strong>)}</div></div>
-  </aside>;
-}
 
 function SpeakingNotes({ slide }: { slide: CareerSlide }) {
   return <details className="career-speaking-notes">
@@ -78,17 +51,19 @@ export function CareerProcessPanel() {
   const slide = <>
     <div className="presenter-topline"><div><span>{career ? "FOOD RESEARCHER" : "NOODLE FACTORY"}</span><strong>{career ? "식품개발연구원 · 10분 진로 이야기" : "면 생산라인 시연"}</strong></div><div><b>{String(career ? index + 1 : index - CAREER_SLIDES.length + 1).padStart(2, "0")}</b><span>/ {career ? CAREER_SLIDES.length : RAMEN_PROCESS_STEPS.length}</span></div></div>
     {career ? <article className={"career-slide" + (career.video ? " career-slide-video" : "")} key={career.id}>
-      <div className="career-slide-copy">
+      <header className="career-slide-heading">
         <div className="career-slide-meta"><span className="eyebrow">{career.kicker}</span><span>권장 {career.seconds}초</span></div>
         <h2 className="career-title-enter">{career.title}</h2>
+      </header>
+      <div className="career-slide-copy">
         <p className="career-headline">{career.headline}</p>
         <ul className="career-reveal-list">
-          {career.points.map((point, i) => <li key={point} className={revealed > i ? "career-reveal shown" : "career-reveal"} aria-hidden={revealed <= i}><span className="career-point-number" aria-hidden="true">{i + 1}</span><span>{point}</span></li>)}
+          {career.points.map((point, i) => <li key={point} className={revealed > i ? "career-reveal shown" : "career-reveal"} aria-hidden={revealed <= i}><span className="career-point-number" aria-hidden="true">{i + 1}</span><div><strong>{point}</strong><p className="career-point-detail">{career.details[i]}</p></div></li>)}
         </ul>
         <blockquote className={complete ? "career-reveal shown" : "career-reveal"} aria-hidden={!complete}><span>함께 생각해요</span>{career.question}</blockquote>
         <div className="slide-source">{career.sources.length ? <>출처: {career.sources.map(n => <a href={CAREER_SOURCES[n].url} key={n} target="_blank" rel="noreferrer">{CAREER_SOURCES[n].title}</a>)}</> : "이 수업의 활동·안전 안내"}</div>
       </div>
-      <CareerVisual slide={career} />
+      <CareerSlideVisual slide={career} />
     </article> : <div className="presenter-stage"><FactoryMotionScene tone={step.tone} playing={playing} /><article className="presenter-script" aria-live="polite"><span>공정 {index - CAREER_SLIDES.length + 1}</span><h2>{step.title}</h2><p>{step.short}</p><div><span>연구원이 확인하는 것</span><strong>{step.researcherCheck}</strong></div><blockquote>{step.teacherPrompt}</blockquote></article></div>}
     <div className="presenter-controls career-controls">
       <button onClick={() => jump(index - 1, true)} disabled={index === 0}>이전 장</button>
@@ -112,7 +87,7 @@ export function CareerProcessPanel() {
     {!full && <div className="career-presenter">{slide}</div>}
     {full && <Fullscreen title="식품개발연구원 발표" close={() => { setFull(false); setPlaying(false); }} previous={back} next={advance}><div className="career-presenter fullscreen-career">{slide}</div></Fullscreen>}
     <details className="slide-teacher-notes"><summary>10분 발표안·출처·이미지 생성 프롬프트</summary>
-      <p>자료 확인: 2026-10-02. 권장 시간은 설명과 학생의 짧은 응답을 포함합니다. 개발 순서와 협업 예시는 수업용으로 정리했으며, 회사와 제품에 따라 실제 업무는 다릅니다. 이미지는 수업용으로 생성한 연구실·협업 장면이고, 영상은 한국식품연구원의 공식 자료입니다.</p>
+      <p>자료 확인: 2026-10-03. 권장 시간은 설명과 학생의 짧은 응답을 포함합니다. 개발 순서와 협업 예시는 수업용으로 정리했으며, 회사와 제품에 따라 실제 업무는 다릅니다. 사진 다섯 장은 각기 다른 주제의 수업용 생성 이미지입니다. 실제 개발 사례와 가상 실험 예시는 구분해 표시했고, 영상은 한국식품연구원의 공식 자료입니다.</p>
       <ol className="career-agenda">{CAREER_SLIDES.map((s, i) => <li key={s.id}><button onClick={() => jump(i)}>{s.title}</button><span>{s.seconds}초</span></li>)}</ol>
       {CAREER_SLIDES.map((s, i) => <details key={s.id}><summary>{i + 1}. {s.title} · 설명과 이미지 프롬프트</summary>{s.notes.map(note => <p key={note}>{note}</p>)}<p><b>질문</b> {s.question}</p><p><b>이미지 생성 프롬프트</b> {s.prompt}</p></details>)}
       {CAREER_SOURCES.map(s => <p key={s.url}><a href={s.url} target="_blank" rel="noreferrer">{s.title}</a></p>)}
