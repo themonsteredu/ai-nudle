@@ -129,11 +129,11 @@ fs.mkdirSync(out, { recursive: true });
   await page.getByLabel("발표 장면", { exact: true }).selectOption("0");
   assert.equal(await page.locator(".career-title-enter").evaluate(e => getComputedStyle(e).animationName), "none");
   assert.equal(await page.locator(".career-reveal").first().evaluate(e => getComputedStyle(e).transitionDuration), "0s");
-  // Existing nine factory scenes and timed video demonstration still work.
+  // Existing nine factory videos advance after actual playback ends.
   await page.getByLabel("발표 장면", { exact: true }).selectOption(String(CAREER_SLIDES.length));
-  await page.getByRole("button", { name: "자동 시연 시작", exact: true }).click();
-  await page.waitForFunction(() => document.querySelector(".presenter-script>span")?.textContent === "공정 2", { timeout: 8000 });
-  await page.getByRole("button", { name: "시연 일시정지", exact: true }).click();
+  await page.getByRole("button", { name: "전체 공정 자동 넘김", exact: true }).click();
+  await page.waitForFunction(() => document.querySelector(".presenter-script>span")?.textContent === "공정 2", null, { timeout: 8000 });
+  await page.getByRole("button", { name: "영상 일시정지", exact: true }).click();
   await page.getByLabel("발표 장면", { exact: true }).selectOption(String(CAREER_SLIDES.length + 8));
   assert(await page.getByRole("button", { name: "다음 장", exact: true }).isDisabled());
   assert.deepEqual(errors, []);

@@ -499,6 +499,17 @@ summary { cursor:pointer; font-weight:700; line-height:1.6; }
 .presentation-navigation button { border:1px solid var(--line); border-radius:9px; background:var(--paper); padding:15px 24px; font-size:18px; cursor:pointer; }
 .career-slide-jumps { display:flex; align-items:end; flex-wrap:wrap; gap:16px; margin-bottom:20px; }
 .career-slide-jumps label { display:grid; gap:8px; max-width:100%; }
+.process-video-shortcuts { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:16px; padding:18px 22px; margin-bottom:24px; border:1px solid var(--line); border-left:4px solid var(--orange); background:var(--paper); }
+.process-video-shortcuts strong { font-size:20px; }
+.process-video-shortcuts p { margin:6px 0 0; color:var(--brown-2); font-size:14px; line-height:1.6; }
+.process-video-shortcuts>div:last-child { display:flex; flex-wrap:wrap; gap:10px; }
+.process-video-shortcuts button { min-height:48px; border:1px solid var(--brown); border-radius:9px; background:var(--brown); color:var(--paper); padding:12px 18px; font-size:16px; font-weight:700; cursor:pointer; }
+.process-video-shortcuts button:last-child { background:var(--orange); border-color:var(--orange); color:white; }
+.process-playback-hint { margin:0; padding:8px 18px 18px; color:#ead3c1; text-align:center; font-size:13px; line-height:1.6; }
+.career-presenter .presenter-timeline button { min-height:64px; }
+.career-presenter .presenter-timeline button span { font-size:11px; }
+.career-presenter .presenter-timeline button b { font-size:14px; word-break:keep-all; }
+@media(max-width:800px) { .career-presenter .presenter-timeline { grid-template-columns:repeat(3,minmax(0,1fr)); } .process-video-shortcuts { padding:16px; } .process-video-shortcuts>div:last-child { width:100%; } .process-video-shortcuts button { flex:1 1 180px; } }
 .career-slide { display:grid; grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr); gap:32px; padding:30px; background:var(--paper); }
 .career-slide h2 { margin:12px 0 18px; font-size:clamp(26px,3vw,54px); line-height:1.35; }
 .career-headline { font-size:clamp(18px,1.75vw,30px); line-height:1.65; font-weight:700; }

@@ -28,7 +28,13 @@ const PROCESS_VIDEOS: Record<ProcessTone, string> = {
   check: "/process/videos/check.mp4",
 };
 
-export function FactoryMotionScene({ tone, playing = true }: { tone: ProcessTone; playing?: boolean }) {
+export function FactoryMotionScene({ tone, playing = true, loop = false, respectReducedMotion = true, onEnded }: {
+  tone: ProcessTone;
+  playing?: boolean;
+  loop?: boolean;
+  respectReducedMotion?: boolean;
+  onEnded?: () => void;
+}) {
   const photo = PROCESS_PHOTOS[tone];
   const videoRef = useRef<HTMLVideoElement>(null);
 
@@ -38,7 +44,7 @@ export function FactoryMotionScene({ tone, playing = true }: { tone: ProcessTone
 
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
     const syncPlayback = () => {
-      if (playing && !reducedMotion.matches) {
+      if (playing && (!respectReducedMotion || !reducedMotion.matches)) {
         if (video.ended) video.currentTime = 0;
         void video.play().catch(() => undefined);
       } else {
@@ -48,8 +54,11 @@ export function FactoryMotionScene({ tone, playing = true }: { tone: ProcessTone
 
     syncPlayback();
     reducedMotion.addEventListener("change", syncPlayback);
-    return () => reducedMotion.removeEventListener("change", syncPlayback);
-  }, [playing, tone]);
+    return () => {
+      video.pause();
+      reducedMotion.removeEventListener("change", syncPlayback);
+    };
+  }, [playing, tone, respectReducedMotion]);
 
   return (
     <figure className={`factory-motion-scene tone-${tone} ${playing ? "is-playing" : "is-paused"}`}>
@@ -62,6 +71,8 @@ export function FactoryMotionScene({ tone, playing = true }: { tone: ProcessTone
         muted
         playsInline
         preload="metadata"
+        loop={loop}
+        onEnded={onEnded}
         aria-hidden="true"
       />
       <span className="factory-photo-shade" aria-hidden="true" />
