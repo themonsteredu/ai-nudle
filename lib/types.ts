@@ -135,7 +135,8 @@ export type LessonClass = {
 export type BlindStatus = "voting" | "closed" | "revealed";
 /** A blind sample points at the submitting device's project, never at a group number. */
 export type BlindSample = { label: string; projectId: string };
-export type BlindRound = { id: string; status: BlindStatus; samples: BlindSample[]; startedAt: string };
+/** revealedAt is set once the groups were shown, so the same round can never be voted on again. */
+export type BlindRound = { id: string; status: BlindStatus; samples: BlindSample[]; startedAt: string; revealedAt?: string };
 export type ComparisonSoup = AllergenInfo & { id: string; name: string; enabled: boolean };
 export type RecipeMethod = "base" | "commercial";
 export type RecipeItem = AllergenInfo & { id: string; name: string; amount: number; category: string };

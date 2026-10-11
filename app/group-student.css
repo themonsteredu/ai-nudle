@@ -1,0 +1,94 @@
+/* Student side · 모둠 선택, 모둠 베스트 제출, 블라인드 투표. Every class starts with gb- . */
+
+/* 모둠 선택 (full screen) */
+.gb-pick-screen { display:grid; min-height:100vh; place-items:center; background:var(--cream); padding:40px 16px; }
+.gb-pick-card { width:min(100%, 760px); text-align:center; }
+.gb-pick-card h1 { margin:0; font-size:clamp(32px, 6vw, 56px); font-weight:900; line-height:1.18; letter-spacing:-.06em; }
+.gb-pick-card > p { margin:14px 0 0; color:var(--brown-2); font-size:17px; line-height:1.6; }
+.gb-pick-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(112px, 1fr)); gap:12px; margin:30px 0 20px; }
+.gb-pick-grid button { display:flex; min-height:116px; flex-direction:column; align-items:center; justify-content:center; gap:4px; border:2px solid var(--line); border-radius:20px; background:var(--paper); color:var(--brown); box-shadow:0 8px 20px rgba(76,44,24,.06); cursor:pointer; transition:transform .12s, border-color .12s; }
+.gb-pick-grid button b { font-size:46px; font-weight:900; line-height:1; letter-spacing:-.04em; }
+.gb-pick-grid button span { color:var(--brown-2); font-size:15px; font-weight:800; }
+/* Hover stays weaker than the chosen state, so the button under the finger never looks pre-selected. */
+@media (hover:hover) { .gb-pick-grid button:not(.active):hover { border-color:var(--orange-soft); background:#fffaf2; } }
+.gb-pick-grid button.active { border-color:var(--orange); background:var(--orange); color:white; }
+.gb-pick-grid button.active span { color:white; }
+.gb-pick-help { margin:0; color:var(--muted); font-size:14px; line-height:1.6; }
+.gb-pick-actions { display:flex; flex-wrap:wrap; justify-content:center; gap:10px; margin-top:18px; }
+.gb-pick-actions button { min-height:46px; border:1px solid var(--line); border-radius:12px; background:white; padding:0 20px; color:var(--brown-2); font-size:15px; font-weight:800; cursor:pointer; }
+
+/* 내 모둠 표시 (top bar) */
+.gb-topbar-title { display:flex; min-width:0; flex-wrap:wrap; align-items:center; gap:8px 12px; }
+.gb-mygroup { display:inline-flex; min-height:30px; flex:none; align-items:center; border-radius:999px; background:var(--brown); padding:0 13px; color:white; font-size:13px; font-weight:800; }
+
+/* 블라인드 투표 알림 */
+.notebook-shell .student-nav button.gb-nav-vote { background:var(--orange-soft); color:var(--orange-deep); }
+.notebook-shell .student-nav button.gb-nav-vote.active { background:var(--orange); color:white; }
+.gb-vote-banner { display:flex; width:100%; align-items:center; gap:12px 16px; margin:0 0 28px; border:0; border-radius:18px; background:var(--orange); padding:16px 18px 16px 20px; color:white; text-align:left; box-shadow:0 12px 24px rgba(220,78,22,.22); cursor:pointer; }
+.gb-vote-banner > span { flex:none; border-radius:999px; background:rgba(255,255,255,.22); padding:6px 11px; font-size:12px; font-weight:900; }
+.gb-vote-banner > strong { flex:1; min-width:0; font-size:17px; line-height:1.45; }
+.gb-vote-banner > em { flex:none; border-radius:12px; background:white; padding:11px 15px; color:var(--orange-deep); font-size:15px; font-style:normal; font-weight:900; }
+.gb-vote-banner:hover { background:var(--orange-deep); }
+
+/* 블라인드 투표 화면 */
+.gb-ballot-state { display:inline-flex; margin:0; border-radius:14px; background:var(--cream-deep); padding:8px 15px; color:var(--brown-2); font-size:15px; font-weight:800; }
+.gb-ballot-state.voting { background:#e3efe6; color:var(--green); }
+.gb-ballot-state.closed { background:#f7e2de; color:var(--red); }
+.gb-ballot-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:14px; margin:24px 0 18px; }
+.gb-ballot-grid button { display:flex; min-height:156px; flex-direction:column; align-items:center; justify-content:center; gap:2px; border:2px solid var(--line); border-radius:22px; background:var(--paper); color:var(--brown); box-shadow:0 8px 20px rgba(76,44,24,.06); cursor:pointer; transition:transform .12s, border-color .12s; }
+.gb-ballot-grid button small { color:var(--muted); font-size:14px; font-weight:800; }
+.gb-ballot-grid button b { font-size:68px; font-weight:900; line-height:1; }
+.gb-ballot-grid button em { margin-top:8px; border-radius:999px; background:white; padding:4px 11px; color:var(--orange-deep); font-size:13px; font-style:normal; font-weight:900; }
+@media (hover:hover) { .gb-ballot-grid button:not(.chosen):not(:disabled):hover { border-color:var(--orange-soft); background:#fffaf2; } }
+.gb-ballot-grid button.chosen { border-color:var(--orange); background:var(--orange); color:white; box-shadow:0 12px 24px rgba(220,78,22,.24); }
+.gb-ballot-grid button.chosen small { color:rgba(255,255,255,.85); }
+.gb-ballot-grid button:disabled { opacity:.5; cursor:default; }
+.gb-ballot-grid button.chosen:disabled { opacity:1; }
+.gb-ballot-hint { margin:12px 0 0; color:var(--brown-2); font-size:15px; font-weight:700; line-height:1.55; }
+.gb-ballot-mine { margin:0; font-size:18px; font-weight:800; }
+.gb-ballot-mine b { color:var(--orange-deep); font-size:22px; }
+.gb-ballot-notice { margin:12px 0 0; color:var(--red); font-weight:800; }
+
+/* 친구 레시피 숨김 */
+.gb-blind-hide { border:2px dashed var(--line); border-radius:18px; background:var(--paper); padding:30px 24px; text-align:center; }
+.gb-blind-hide strong { font-size:21px; }
+.gb-blind-hide p { margin:10px auto 0; max-width:460px; color:var(--brown-2); line-height:1.7; }
+
+/* 모둠 베스트 제출 */
+.gb-sub-status { display:flex; flex-wrap:wrap; align-items:center; gap:12px 18px; margin:0 0 22px; border:2px solid var(--line); border-radius:18px; background:var(--paper); padding:18px 20px; }
+.gb-sub-status.done { border-color:var(--green); background:#eef6f0; }
+.gb-sub-status > div { flex:1; min-width:200px; }
+.gb-sub-status strong { display:block; font-size:19px; line-height:1.4; }
+.gb-sub-status p { margin:4px 0 0; color:var(--brown-2); font-size:14px; overflow-wrap:anywhere; }
+.gb-sub-status > button { min-height:46px; border:1px solid var(--line); border-radius:12px; background:white; padding:0 18px; color:var(--red); font-size:15px; font-weight:800; cursor:pointer; }
+.gb-sub-status > button.gb-sub-go { color:var(--brown); }
+.gb-sub-badge { flex:none; border-radius:999px; background:var(--green); padding:7px 13px; color:white; font-size:14px; font-weight:900; }
+.gb-sub-badge.todo { background:var(--cream-deep); color:var(--brown-2); }
+.gb-sub-lock { margin:0 0 22px; border-left:4px solid var(--orange); border-radius:8px; background:#fff1d9; padding:14px 18px; font-weight:700; line-height:1.6; }
+.gb-sub-fields { min-width:0; margin:0; border:0; padding:0; }
+.gb-sub-fields:disabled { opacity:.6; }
+.gb-sub-note { color:var(--muted); font-size:14px; line-height:1.6; }
+.gb-sub-note.strong { color:var(--orange-deep); font-weight:800; }
+.record-actions.gb-sub-actions { margin-top:18px; }
+.record-actions .gb-sub-submit { min-height:56px; border-color:var(--orange); background:var(--orange); padding:0 24px; color:white; font-size:17px; box-shadow:0 10px 20px rgba(220,78,22,.2); }
+.record-actions .gb-sub-submit:hover:not(:disabled) { background:var(--orange-deep); }
+
+/* Phones: with the vote tab there are four tabs, so they wrap into two rows instead of hiding one. */
+@media (max-width: 860px) {
+  .notebook-shell .student-nav:has(> button:nth-child(4)) { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); overflow:visible; }
+  .notebook-shell .student-nav:has(> button:nth-child(4)) button { justify-content:center; text-align:center; }
+  .notebook-shell .notebook-session button { min-height:44px; padding:0 4px; }
+}
+@media (max-width: 560px) {
+  .gb-pick-screen { padding:28px 16px; place-items:start center; }
+  .gb-pick-grid { grid-template-columns:repeat(3, minmax(0, 1fr)); gap:10px; margin-top:24px; }
+  .gb-pick-grid button { min-height:96px; border-radius:16px; }
+  .gb-pick-grid button b { font-size:38px; }
+  .gb-vote-banner { flex-wrap:wrap; }
+  .gb-vote-banner > em { width:100%; text-align:center; }
+  .gb-ballot-grid { grid-template-columns:repeat(2, minmax(0, 1fr)); gap:12px; }
+  .gb-ballot-grid button { min-height:128px; }
+  .gb-ballot-grid button b { font-size:56px; }
+  .gb-sub-status > button { width:100%; }
+}
+@media (prefers-reduced-motion: reduce) { .gb-pick-grid button, .gb-ballot-grid button { transition:none; } }

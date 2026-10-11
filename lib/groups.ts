@@ -36,9 +36,14 @@ export function groupSubmissions(projects: StudentProject[]) {
     if (!group || !isSubmitted(project)) continue;
     counts.set(group, (counts.get(group) ?? 0) + 1);
     const current = latest.get(group);
-    if (!current || (project.notebook!.final!.savedAt ?? "") > (current.notebook!.final!.savedAt ?? "")) latest.set(group, project);
+    if (!current || submittedAt(project) > submittedAt(current)) latest.set(group, project);
   }
   return { latest, counts };
+}
+/** savedAt comes from the student device clock; the server's updatedAt caps a clock that runs ahead. */
+function submittedAt(project: StudentProject) {
+  const saved = project.notebook?.final?.savedAt ?? "";
+  return project.updatedAt && saved > project.updatedAt ? project.updatedAt : saved;
 }
 
 export const sampleLetter = (index: number) => String.fromCharCode(65 + index);
@@ -58,15 +63,33 @@ function createRoundId() {
   return Array.from(bytes, (x) => x.toString(16).padStart(2, "0")).join("");
 }
 
+/** Grace for clock differences between the teacher device (startedAt) and the server (createdAt). */
+export const VOTE_GRACE_MS = 60_000;
+/**
+ * True when the record existed before the round started (createdAt is set by the server).
+ * Records made later may still vote (a student can join just to vote), but "다른 학생 시작" could also
+ * add extra votes, so the teacher sees these votes separately and can leave them out.
+ */
+export function joinedBeforeRound(project: StudentProject | null | undefined, round: BlindRound) {
+  const created = Date.parse(project?.createdAt ?? "");
+  const started = Date.parse(round.startedAt);
+  return !Number.isFinite(created) || !Number.isFinite(started) || created <= started + VOTE_GRACE_MS;
+}
+
 export type TallyRow = { label: string; projectId: string; group?: number; votes: number; ownVotes: number };
-/** Counts one vote per device. Own-group votes are reported separately so the teacher can leave them out. */
-export function tallyVotes(projects: StudentProject[], round: BlindRound, excludeOwnGroup: boolean) {
+/**
+ * Counts one vote per record. Own-group votes are reported separately, and votes from records made after
+ * the round started are counted in `late`, so the teacher can leave either out.
+ */
+export function tallyVotes(projects: StudentProject[], round: BlindRound, excludeOwnGroup: boolean, excludeLate = false) {
   const byId = new Map(projects.map((p) => [p.id, p]));
   const rows: TallyRow[] = round.samples.map((sample) => ({ label: sample.label, projectId: sample.projectId, group: groupOf(byId.get(sample.projectId)), votes: 0, ownVotes: 0 }));
   let voters = 0;
+  let late = 0;
   for (const project of projects) {
     const label = voteOf(project, round);
     if (!label) continue;
+    if (!joinedBeforeRound(project, round)) { late++; if (excludeLate) continue; }
     voters++;
     const row = rows.find((x) => x.label === label)!;
     const voterGroup = groupOf(project);
@@ -75,5 +98,5 @@ export function tallyVotes(projects: StudentProject[], round: BlindRound, exclud
   }
   const counted = (row: TallyRow) => row.votes + (excludeOwnGroup ? 0 : row.ownVotes);
   const top = Math.max(0, ...rows.map(counted));
-  return { rows, voters, counted, winners: top > 0 ? rows.filter((row) => counted(row) === top).map((row) => row.label) : [] };
+  return { rows, voters, late, counted, winners: top > 0 ? rows.filter((row) => counted(row) === top).map((row) => row.label) : [] };
 }

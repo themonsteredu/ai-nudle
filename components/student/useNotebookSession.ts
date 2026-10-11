@@ -46,14 +46,17 @@ export function useNotebookSession() {
     document.addEventListener("visibilitychange", onHide);
     return () => { clearInterval(timer); window.removeEventListener("online", flush); document.removeEventListener("visibilitychange", onHide); };
   }, [flush]);
-  useEffect(() => {
-    const timer = window.setInterval(async () => {
-      const session = active.current;
-      if (!session) return;
-      try { const loaded = await loadSettings(session.code); if (active.current === session) setSettings(loaded.settings); } catch { /* Preserve loaded lesson offline. */ }
-    }, 12000);
-    return () => clearInterval(timer);
+  /** Reloads the lesson (blind vote status, group count). Returns null when offline. */
+  const refreshSettings = useCallback(async () => {
+    const session = active.current;
+    if (!session) return null;
+    try { const loaded = await loadSettings(session.code); if (active.current === session) setSettings(loaded.settings); return loaded.settings; }
+    catch { return null; /* Preserve loaded lesson offline. */ }
   }, []);
+  useEffect(() => {
+    const timer = window.setInterval(() => void refreshSettings(), 12000);
+    return () => clearInterval(timer);
+  }, [refreshSettings]);
   async function join(codeInput: string, fresh = false) {
     setBusy(true); setStatus("");
     try {
@@ -102,10 +105,14 @@ export function useNotebookSession() {
     setProject(active.current.project);
     if (!blocked.current) setStatus("기기에 저장됨 · 서버 저장 대기");
   }
+  /** Applies a change to the newest local project, even after an await. */
+  function patch(change: (p: StudentProject) => StudentProject) {
+    if (active.current) update(change(active.current.project));
+  }
   function exportDraft() {
     if (!project) return;
     const url = URL.createObjectURL(new Blob([JSON.stringify(project, null, 2)], { type: "application/json" }));
     const a = document.createElement("a"); a.href = url; a.download = "라면-연구기록.json"; a.click(); URL.revokeObjectURL(url);
   }
-  return { project, settings, status, busy, join, update, flush, exportDraft, code: activeCode, leave: () => { void flush(); active.current = null; setProject(null); setStatus(""); setActiveCode(""); } };
+  return { project, settings, status, busy, join, update, patch, refreshSettings, flush, exportDraft, code: activeCode, leave: () => { void flush(); active.current = null; setProject(null); setStatus(""); setActiveCode(""); } };
 }

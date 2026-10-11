@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { loadSettings, loadStudents, saveSettings, teacherSession } from "@/lib/client-api";
+import { ApiError, loadSettings, loadStudents, saveSettings, teacherSession } from "@/lib/client-api";
 import { defaultSettings } from "@/lib/defaults";
 import type { AppSettings, StudentProject, SupplyCategory } from "@/lib/types";
 import {
@@ -17,9 +17,11 @@ import {
 import { ClassPanel } from "./teacher/ClassPanel";
 import { StudentRecipesPanel } from "./teacher/StudentRecipesPanel";
 import { CareerProcessPanel } from "./teacher/CareerProcessPanel";
+import { GroupBestPanel, type LessonPatch } from "./teacher/GroupBestPanel";
 
 type TeacherSection =
   | "classes"
+  | "groups"
   | "recipes"
   | "overview"
   | "career"
@@ -39,6 +41,7 @@ type TeacherSection =
 const NAV_GROUPS: { title: string; items: { id: TeacherSection; label: string }[] }[] = [
   { title: "수업 운영", items: [
     { id: "classes", label: "수업·반 설정" },
+    { id: "groups", label: "모둠 베스트·블라인드 투표" },
     { id: "overview", label: "수업 개요" },
     { id: "recipes", label: "학생 레시피 보기" },
     { id: "career", label: "직업소개·공정시연" },
@@ -66,6 +69,19 @@ const NAV_GROUPS: { title: string; items: { id: TeacherSection; label: string }[
 // 교사 인증을 없앴기 때문에 서버 세션 발급용 값을 화면에서 자동으로 보냅니다.
 const TEACHER_PASSWORD = "3035";
 
+/**
+ * The blind vote belongs to the server: it changes only through commitLesson and may be run from another
+ * teacher device. Every save therefore sends the newest saved round of each class, never this screen's copy.
+ */
+function withServerRounds(local: AppSettings, remote: AppSettings): AppSettings {
+  return { ...local, classes: local.classes?.map((lesson) => {
+    const saved = remote.classes?.find((x) => x.id === lesson.id)?.blindRound;
+    const { blindRound: _, ...rest } = lesson;
+    void _;
+    return saved ? { ...rest, blindRound: saved } : rest;
+  }) };
+}
+
 const SUPPLY_SECTION: Partial<Record<TeacherSection, SupplyCategory>> = {
   noodle: "noodle",
   tasting: "tasting",
@@ -88,11 +104,29 @@ export default function TeacherApp() {
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState("");
   const [safetyChecked, setSafetyChecked] = useState<Record<number, boolean>>({});
+  // Counts local edits and blind-vote commits so late server answers never overwrite newer changes.
+  const editCount = useRef(0);
+  const commitCount = useRef(0);
 
   const setSettings = (next: AppSettings) => {
+    editCount.current++;
     setSettingsState(next);
     setDirty(true);
   };
+
+  /** Copies only the saved blind vote of each class into the screen, keeping unsaved local edits. */
+  const syncBlindRounds = useCallback((remote: AppSettings) => {
+    setSettingsState((current) => {
+      let changed = false;
+      const classes = current.classes?.map((lesson) => {
+        const saved = remote.classes?.find((x) => x.id === lesson.id);
+        if (!saved || JSON.stringify(saved.blindRound) === JSON.stringify(lesson.blindRound)) return lesson;
+        changed = true;
+        return { ...lesson, blindRound: saved.blindRound };
+      });
+      return changed ? { ...current, classes } : current;
+    });
+  }, []);
 
   async function loadTeacherData() {
     try {
@@ -152,16 +186,78 @@ export default function TeacherApp() {
     return () => { cancelled = true; clearInterval(timer); };
   }, [authenticated, classId]);
 
+  // Another teacher device (e.g. a phone) may run the vote, so the board keeps the vote state fresh.
+  useEffect(() => {
+    if (!authenticated || section !== "groups") return;
+    let cancelled = false;
+    const sync = async () => {
+      const started = commitCount.current;
+      try { const loaded = await loadSettings(); if (!cancelled && started === commitCount.current) syncBlindRounds(loaded.settings); }
+      catch { /* keep the current screen and try again */ }
+    };
+    void sync();
+    const timer = window.setInterval(sync, 5000);
+    return () => { cancelled = true; clearInterval(timer); };
+  }, [authenticated, section, syncBlindRounds]);
+
+  /**
+   * Blind-vote controls save right away. The newest server settings are always reloaded first and the
+   * patch runs against the saved round, so nothing newer is overwritten. Unsaved local edits are saved
+   * together; if one of them is invalid, only the vote change is saved and the edits stay unsaved.
+   */
+  async function commitLesson(id: string, patch: LessonPatch, message: string) {
+    if (saving) return false;
+    setSaving(true);
+    commitCount.current++;
+    const localEdits = dirty;
+    const editsBefore = editCount.current;
+    try {
+      const remote = (await loadSettings()).settings;
+      const base = localEdits ? withServerRounds(settings, remote) : remote;
+      const lesson = base.classes?.find((x) => x.id === id);
+      if (!lesson) throw new Error("이 수업을 찾지 못했어요. 새로고침 후 다시 해 주세요.");
+      const change = typeof patch === "function" ? patch(lesson) : patch;
+      if (!change) {
+        syncBlindRounds(remote);
+        setNotice("다른 화면에서 이미 바뀌었어요. 최신 상태를 불러왔어요.");
+        return false;
+      }
+      const apply = (value: AppSettings): AppSettings => ({ ...value, classes: value.classes?.map((x) => x.id === id ? { ...x, ...change } : x) });
+      let result: { settings: AppSettings };
+      let skipped = "";
+      try { result = await saveSettings(apply(base)); }
+      catch (error) {
+        if (!localEdits || !(error instanceof ApiError && error.status === 400) || !remote.classes?.some((x) => x.id === id)) throw error;
+        result = await saveSettings(apply(remote));
+        skipped = error.message;
+      }
+      if (editCount.current === editsBefore && !skipped) { setSettingsState(result.settings); setDirty(false); }
+      else syncBlindRounds(result.settings);
+      setNotice(skipped ? `${message} 저장하지 않은 설정은 확인이 필요해 그대로 두었어요. (${skipped})` : localEdits ? `${message} 저장하지 않았던 설정도 함께 저장했어요.` : message);
+      return true;
+    } catch (error) {
+      setNotice(error instanceof Error && error.message ? error.message : "저장하지 못했어요. 다시 눌러 주세요.");
+      return false;
+    } finally {
+      commitCount.current++;
+      setSaving(false);
+    }
+  }
+
   async function saveAll() {
     setSaving(true);
+    commitCount.current++;
+    const editsBefore = editCount.current;
     try {
-      const result = await saveSettings(settings);
-      setSettingsState(result.settings);
-      setDirty(false);
+      const remote = (await loadSettings()).settings;
+      const result = await saveSettings(withServerRounds(settings, remote));
+      if (editCount.current === editsBefore) { setSettingsState(result.settings); setDirty(false); }
+      else syncBlindRounds(result.settings);
       setNotice("교사 설정을 저장했습니다. 학생 화면에도 반영됩니다.");
     } catch (error) {
       setNotice(error instanceof Error ? error.message : "설정을 저장하지 못했습니다.");
     } finally {
+      commitCount.current++;
       setSaving(false);
     }
   }
@@ -214,6 +310,7 @@ export default function TeacherApp() {
         </header>
 
         {section === "classes" && <ClassPanel settings={settings} setSettings={setSettings} classId={classId} selectClass={(id) => { setProjects([]); setClassId(id); }} />}
+        {section === "groups" && <GroupBestPanel key={classId} settings={settings} classId={classId} projects={visibleProjects} commit={(patch, message) => commitLesson(classId, patch, message)} busy={saving} refresh={refreshStudents} loading={studentsLoading} error={studentsError} />}
         {section === "recipes" && <StudentRecipesPanel key={classId} projects={visibleProjects} settings={settings} classId={classId} refresh={refreshStudents} loading={studentsLoading} error={studentsError} />}
         {section === "overview" && (
           <OverviewPanel

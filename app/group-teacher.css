@@ -1,0 +1,171 @@
+/* 교사용 모둠 베스트 · 블라인드 투표 (components/teacher/GroupBestPanel.tsx). All classes use the gb- prefix. */
+.gb-empty { border: 1px dashed var(--line); border-radius: 18px; background: var(--paper); padding: 40px 24px; color: var(--brown-2); font-size: 17px; font-weight: 700; text-align: center; }
+.gb-error { margin: 0 0 14px; border-radius: 12px; background: #fbe4df; padding: 12px 16px; color: var(--red); font-size: 15px; font-weight: 800; }
+.gb-muted { color: var(--muted); font-size: 15px; }
+
+/* Progress steps */
+.gb-steps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin: 0 0 18px; padding: 0; list-style: none; }
+.gb-steps li { display: flex; align-items: center; gap: 10px; min-height: 56px; border: 1px solid var(--line); border-radius: 14px; background: rgba(255, 255, 255, .5); padding: 10px 14px; color: var(--muted); font-size: 15px; font-weight: 800; word-break: keep-all; }
+.gb-steps li b { display: grid; flex: 0 0 30px; height: 30px; place-items: center; border-radius: 50%; background: var(--cream-deep); font-size: 13px; }
+.gb-steps li.done { color: var(--green); }
+.gb-steps li.done b { background: #dcebe1; }
+.gb-steps li.now { border-color: var(--orange); background: var(--orange-soft); color: var(--orange-deep); }
+.gb-steps li.now b { background: var(--orange); color: white; }
+
+/* Blocks */
+.gb-block { margin-top: 16px; border: 1px solid #d9d2c8; border-radius: 20px; background: white; padding: 26px; }
+.gb-block > header { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 14px 24px; margin-bottom: 18px; }
+.gb-block > header > div { min-width: 0; flex: 1 1 320px; }
+.gb-block h2 { margin: 0; font-size: 26px; letter-spacing: -.04em; }
+.gb-block > header p { margin: 6px 0 0; color: var(--muted); font-size: 15px; line-height: 1.55; }
+.gb-count { color: var(--brown); font-size: 22px; white-space: nowrap; }
+
+/* Submission chips: only 제출 / 미제출, never recipe content */
+.gb-chips { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 10px; margin: 0; padding: 0; list-style: none; }
+.gb-chips li { display: flex; flex-direction: column; gap: 4px; min-height: 76px; justify-content: center; border: 2px dashed var(--line); border-radius: 14px; padding: 12px 16px; color: var(--muted); }
+.gb-chips b { color: var(--brown); font-size: 21px; letter-spacing: -.03em; }
+.gb-chips span { font-size: 15px; font-weight: 800; }
+.gb-chips li.done { border-style: solid; border-color: var(--green); background: #eef5f0; }
+.gb-chips li.done span { color: var(--green); }
+.gb-chips li.done span::before { content: "✓ "; }
+.gb-chips li.warn { border-color: var(--orange); background: var(--orange-soft); }
+.gb-chips li.warn span { color: var(--orange-deep); }
+.gb-chips li.warn span::before { content: "! "; }
+.gb-notes { display: grid; gap: 6px; margin: 16px 0 0; padding: 14px 18px; border-radius: 12px; background: var(--cream); list-style: none; }
+.gb-notes li { position: relative; padding-left: 14px; color: var(--brown-2); font-size: 14px; font-weight: 700; line-height: 1.55; }
+.gb-notes li::before { position: absolute; left: 0; top: .65em; width: 5px; height: 5px; border-radius: 50%; background: var(--orange); content: ""; }
+
+/* Controls */
+.gb-status { display: inline-flex; align-items: center; gap: 8px; margin-top: 10px; border-radius: 999px; padding: 7px 15px; font-size: 15px; font-weight: 900; }
+.gb-status::before { width: 10px; height: 10px; border-radius: 50%; background: currentColor; content: ""; }
+.gb-status.voting { background: var(--orange-soft); color: var(--orange-deep); }
+.gb-status.voting::before { animation: gb-pulse 1.4s ease-in-out infinite; }
+.gb-status.closed { background: var(--cream-deep); color: var(--brown-2); }
+.gb-status.revealed { background: #e1ede5; color: var(--green); }
+@keyframes gb-pulse { 50% { opacity: .25; } }
+.gb-stage { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 18px 24px; }
+.gb-stage > div:first-child { min-width: 0; flex: 1 1 300px; }
+.gb-lead { margin: 6px 0 0; color: var(--brown-2); font-size: 17px; font-weight: 700; line-height: 1.5; }
+.gb-hero { display: block; color: var(--brown); font-size: 64px; font-weight: 900; line-height: 1; letter-spacing: -.04em; }
+.gb-hero small { margin-left: 6px; font-size: 22px; letter-spacing: -.02em; }
+.gb-late { margin: 6px 0 0; color: var(--orange-deep); font-size: 14px; font-weight: 800; }
+.gb-field-hint { color: var(--muted); font-size: 12px; font-weight: 700; line-height: 1.5; }
+.gb-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.gb-actions .teacher-primary { min-height: 56px; padding-inline: 26px; font-size: 17px; }
+.gb-ghost { min-height: 48px; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); padding: 0 18px; color: var(--brown); font-size: 15px; font-weight: 800; cursor: pointer; }
+.gb-ghost:hover:not(:disabled) { border-color: var(--brown-2); }
+.gb-actions .gb-ghost { min-height: 56px; }
+.gb-danger { border-color: rgba(189, 67, 56, .35); color: var(--red); }
+.gb-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 18px; margin-top: 22px; border-top: 1px solid #eee6dc; padding-top: 16px; }
+.gb-foot p { margin: 0; color: var(--muted); font-size: 14px; }
+.gb-toggle { display: inline-flex; align-items: center; gap: 10px; min-height: 48px; border: 1px solid var(--line); border-radius: 999px; background: var(--paper); padding: 0 18px 0 8px; color: var(--brown); font-size: 15px; font-weight: 800; cursor: pointer; }
+.gb-toggle i { position: relative; flex: 0 0 44px; height: 26px; border-radius: 20px; background: #cabfb1; transition: background .2s; }
+.gb-toggle i::after { position: absolute; left: 3px; top: 3px; width: 20px; height: 20px; border-radius: 50%; background: white; content: ""; transition: transform .2s; }
+.gb-toggle[aria-pressed="true"] i { background: var(--green); }
+.gb-toggle[aria-pressed="true"] i::after { transform: translateX(18px); }
+
+/* Results: one series, so no legend; the winner carries a text badge, not only color */
+.gb-winner { margin: 0 0 14px; border-radius: 12px; background: var(--cream); padding: 14px 18px; color: var(--brown); font-size: 20px; font-weight: 900; line-height: 1.45; }
+.gb-bars { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; }
+.gb-bars li { display: grid; grid-template-columns: minmax(118px, 190px) minmax(0, 1fr) minmax(150px, auto); align-items: center; gap: 16px; min-height: 58px; border-bottom: 1px solid #eee6dc; padding: 6px 0; }
+.gb-bar-name { display: flex; flex-direction: column; color: var(--brown); font-size: 20px; font-weight: 900; }
+.gb-bar-name small { color: var(--brown-2); font-size: 14px; font-weight: 800; }
+.gb-bar-track { position: relative; height: 24px; border-left: 1px solid var(--line); }
+.gb-bar-track i { display: block; height: 100%; border-radius: 0 4px 4px 0; background: #b7a294; transition: width .4s ease; }
+.gb-bars li.win .gb-bar-track i { background: var(--orange); }
+.gb-bar-value { display: flex; align-items: center; gap: 8px; color: var(--brown-2); font-size: 17px; font-weight: 700; white-space: nowrap; }
+.gb-bar-value b { color: var(--brown); font-size: 20px; }
+.gb-bar-value em, .gb-win { border-radius: 999px; background: var(--orange); padding: 4px 11px; color: white; font-size: 13px; font-style: normal; font-weight: 900; }
+
+/* Blind recipe cards */
+.gb-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr)); gap: 16px; }
+.gb-card { display: flex; min-width: 0; flex-direction: column; border: 1px solid var(--line); border-radius: 18px; background: var(--paper); padding: 20px; }
+.gb-card.win { border: 3px solid var(--orange); padding: 18px; }
+.gb-card > header { display: flex; align-items: center; gap: 14px; }
+.gb-card > header > div { min-width: 0; flex: 1; }
+.gb-card > header small { display: block; color: var(--muted); font-size: 12px; font-weight: 800; letter-spacing: .04em; }
+.gb-card h3 { margin: 2px 0 0; font-size: 25px; letter-spacing: -.04em; }
+.gb-letter { display: grid; flex: 0 0 64px; height: 64px; place-items: center; border-radius: 18px; background: var(--brown); color: white; font-size: 38px; font-weight: 900; }
+.gb-card.win .gb-letter { background: var(--orange); }
+.gb-reveal { display: grid; min-width: 0; grid-template-columns: minmax(0, 1fr); gap: 4px; margin-top: 14px; border-radius: 14px; background: var(--orange-soft); padding: 14px 16px; }
+.gb-reveal b { justify-self: start; border-radius: 999px; background: var(--brown); padding: 4px 12px; color: white; font-size: 14px; }
+/* Students may type 24 letters without a space, so long names break anywhere instead of leaving the card. */
+.gb-reveal strong { color: var(--brown); font-size: 22px; letter-spacing: -.03em; word-break: keep-all; overflow-wrap: anywhere; }
+.gb-reveal p { margin: 0; color: var(--brown-2); font-size: 15px; line-height: 1.5; overflow-wrap: anywhere; }
+.gb-cook { display: flex; flex-wrap: wrap; gap: 6px; margin: 14px 0 4px; color: var(--brown-2); font-size: 14px; font-weight: 800; }
+.gb-cook span { border-radius: 8px; background: var(--cream-deep); padding: 5px 9px; white-space: nowrap; }
+.gb-card dl { margin: 6px 0 0; }
+.gb-card dl > div { display: flex; justify-content: space-between; gap: 14px; border-bottom: 1px solid var(--line); padding: 9px 0; font-size: 17px; }
+.gb-card dt { min-width: 0; }
+.gb-card dd { margin: 0; font-weight: 800; white-space: nowrap; }
+.gb-card .recipe-allergens { margin: 14px 0 0; }
+.gb-card > .gb-ghost { margin-top: 16px; }
+.gb-card > .gb-muted { margin: 14px 0 0; }
+
+/* Fullscreen presentation on the classroom board */
+.gb-present { padding-top: 24px; }
+.gb-present .gb-card, .gb-present .gb-card.win { border: 0; background: transparent; padding: 0 0 24px; }
+.gb-present .gb-card > header { gap: 24px; }
+.gb-present .gb-letter { flex-basis: clamp(88px, 9vw, 140px); height: clamp(88px, 9vw, 140px); border-radius: 28px; font-size: clamp(56px, 6vw, 92px); }
+.gb-present .gb-card > header small { font-size: clamp(14px, 1.1vw, 20px); }
+.gb-present .gb-card h3 { font-size: clamp(34px, 3.8vw, 64px); }
+.gb-present .gb-win { padding: 8px 18px; font-size: clamp(16px, 1.4vw, 24px); }
+.gb-present .gb-reveal { margin-top: 22px; padding: 20px 26px; }
+.gb-present .gb-reveal b { font-size: clamp(16px, 1.3vw, 24px); }
+.gb-present .gb-reveal strong { font-size: clamp(28px, 2.8vw, 48px); }
+.gb-present .gb-reveal p { font-size: clamp(17px, 1.5vw, 26px); }
+.gb-present .gb-card-body { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 40px; align-items: start; margin-top: 10px; }
+.gb-present .gb-cook { gap: 10px; font-size: clamp(17px, 1.4vw, 26px); }
+.gb-present .gb-cook span { padding: 6px 14px; }
+.gb-present .gb-card dl > div { padding: 12px 0; font-size: clamp(20px, 1.9vw, 34px); }
+.gb-present .recipe-allergens p { font-size: clamp(15px, 1.15vw, 23px); }
+/* Classroom boards are often 1366x768~900: keep a whole recipe on one screen. */
+@media (min-width: 900px) and (max-height: 920px) {
+  .gb-present { padding-top: 10px; }
+  .gb-present .gb-letter { flex-basis: 84px; height: 84px; border-radius: 22px; font-size: 54px; }
+  .gb-present .gb-card h3 { font-size: clamp(30px, 3vw, 46px); }
+  .gb-present .gb-reveal { margin-top: 12px; padding: 12px 20px; }
+  .gb-present .gb-reveal strong { font-size: clamp(24px, 2.3vw, 36px); }
+  .gb-present .gb-reveal p { font-size: clamp(16px, 1.3vw, 20px); }
+  .gb-present .gb-cook { margin-top: 8px; font-size: clamp(15px, 1.2vw, 20px); }
+  .gb-present .gb-card dl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 32px; }
+  .gb-present .gb-card dl > div { padding: 8px 0; font-size: clamp(18px, 1.6vw, 26px); }
+  .gb-present .gb-card-body { gap: 28px; }
+  .gb-present .presentation-navigation { padding: 10px; }
+  .gb-present .presentation-navigation button { padding: 10px 20px; }
+}
+
+@media (max-width: 1100px) {
+  .gb-bars li { grid-template-columns: minmax(96px, 150px) minmax(0, 1fr) auto; }
+}
+@media (max-width: 860px) {
+  .gb-steps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 580px) {
+  .gb-steps li { min-height: 48px; gap: 8px; padding: 8px 10px; font-size: 13px; }
+  .gb-steps li b { flex-basis: 24px; height: 24px; font-size: 11px; }
+  .gb-block { border-radius: 16px; padding: 18px 16px; }
+  .gb-block h2 { font-size: 22px; }
+  .gb-block > header > div { flex-basis: 100%; }
+  .gb-chips { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .gb-chips li { min-height: 64px; padding: 10px; }
+  .gb-chips b { font-size: 17px; }
+  .gb-chips span { font-size: 13px; }
+  .gb-hero { font-size: 52px; }
+  .gb-actions, .gb-actions > button { width: 100%; }
+  .gb-actions > button { justify-content: center; }
+  .gb-block > header > .gb-ghost, .gb-block > header > .gb-toggle, .gb-block > header > .teacher-primary, .gb-foot .gb-ghost { width: 100%; justify-content: center; }
+  .gb-winner { font-size: 17px; }
+  .gb-bars li { grid-template-columns: 74px minmax(0, 1fr); gap: 4px 12px; padding: 10px 0; }
+  .gb-bar-name { grid-row: span 2; font-size: 17px; }
+  .gb-bar-value { font-size: 15px; }
+  .gb-bar-value b { font-size: 17px; }
+  .gb-present .gb-card-body { grid-template-columns: 1fr; gap: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .gb-status.voting::before { animation: none; }
+  .gb-bar-track i, .gb-toggle i, .gb-toggle i::after { transition: none; }
+}
+@media print {
+  .gb-panel .gb-actions, .gb-panel .gb-toggle, .gb-panel .gb-ghost { display: none !important; }
+}
