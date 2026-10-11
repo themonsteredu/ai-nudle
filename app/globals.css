@@ -768,3 +768,5 @@ summary { cursor:pointer; font-weight:700; line-height:1.6; }
   .career-reveal { transition:none; transform:none; }
   .career-title-enter { animation:none; }
 }
+.cover-teacher-link { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; margin-top: 18px; border: 1px solid var(--line); border-radius: 12px; background: white; padding: 0 18px; color: var(--brown-2); font-size: 15px; font-weight: 800; }
+@media (max-width: 860px) { .toast, .teacher-toast { left: 50%; width: max-content; max-width: calc(100% - 32px); border-radius: 16px; text-align: center; } }

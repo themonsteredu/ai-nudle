@@ -63,6 +63,9 @@ const NAV_GROUPS: { title: string; items: { id: TeacherSection; label: string }[
   ] },
 ];
 
+// 교사 인증을 없앴기 때문에 서버 세션 발급용 값을 화면에서 자동으로 보냅니다.
+const TEACHER_PASSWORD = "3035";
+
 const SUPPLY_SECTION: Partial<Record<TeacherSection, SupplyCategory>> = {
   noodle: "noodle",
   tasting: "tasting",
@@ -73,9 +76,8 @@ const SUPPLY_SECTION: Partial<Record<TeacherSection, SupplyCategory>> = {
 
 export default function TeacherApp() {
   const [authenticated, setAuthenticated] = useState<boolean | null>(null);
-  const [password, setPassword] = useState("");
   const [loginError, setLoginError] = useState("");
-  const [loggingIn, setLoggingIn] = useState(false);
+  const [retry, setRetry] = useState(0);
   const [section, setSection] = useState<TeacherSection>("classes");
   const [settings, setSettingsState] = useState<AppSettings>(defaultSettings);
   const [classId, setClassId] = useState("");
@@ -92,31 +94,6 @@ export default function TeacherApp() {
     setDirty(true);
   };
 
-  useEffect(() => {
-    let cancelled = false;
-    async function check() {
-      try {
-        const payload = await teacherSession();
-        if (cancelled) return;
-        setAuthenticated(payload.authenticated);
-        if (payload.authenticated) await loadTeacherData();
-      } catch (error) {
-        if (!cancelled) {
-          setAuthenticated(false);
-          setLoginError(error instanceof Error ? error.message : "로그인 서버에 연결하지 못했습니다.");
-        }
-      }
-    }
-    void check();
-    return () => { cancelled = true; };
-  }, []);
-
-  useEffect(() => {
-    if (!notice) return;
-    const timer = window.setTimeout(() => setNotice(""), 3000);
-    return () => window.clearTimeout(timer);
-  }, [notice]);
-
   async function loadTeacherData() {
     try {
       const loaded = await loadSettings();
@@ -128,6 +105,33 @@ export default function TeacherApp() {
     }
     setDirty(false);
   }
+
+  useEffect(() => {
+    let cancelled = false;
+    async function check() {
+      try {
+        // 교사 인증 화면 없이 바로 입장합니다. 서버 세션이 없으면 자동으로 발급받습니다.
+        const payload = await teacherSession();
+        if (!payload.authenticated) await teacherSession("POST", TEACHER_PASSWORD);
+        if (cancelled) return;
+        await loadTeacherData();
+        if (!cancelled) setAuthenticated(true);
+      } catch (error) {
+        if (!cancelled) {
+          setAuthenticated(false);
+          setLoginError(error instanceof Error ? error.message : "로그인 서버에 연결하지 못했습니다.");
+        }
+      }
+    }
+    void check();
+    return () => { cancelled = true; };
+  }, [retry]);
+
+  useEffect(() => {
+    if (!notice) return;
+    const timer = window.setTimeout(() => setNotice(""), 3000);
+    return () => window.clearTimeout(timer);
+  }, [notice]);
 
   const refreshStudents = useCallback(async () => {
     if (!authenticated || !classId) return;
@@ -147,30 +151,6 @@ export default function TeacherApp() {
     const timer = window.setInterval(refresh, 5000);
     return () => { cancelled = true; clearInterval(timer); };
   }, [authenticated, classId]);
-
-  async function login(event: React.FormEvent) {
-    event.preventDefault();
-    if (loggingIn) return;
-    setLoggingIn(true);
-    setLoginError("");
-    try {
-      await teacherSession("POST", password);
-      await loadTeacherData();
-      setAuthenticated(true);
-      setPassword("");
-    } catch (error) {
-      setLoginError(error instanceof Error ? error.message : "로그인 서버에 연결하지 못했습니다.");
-    } finally {
-      setLoggingIn(false);
-    }
-  }
-
-  async function logout() {
-    try {
-      await teacherSession("DELETE");
-      setAuthenticated(false);
-    } catch { setNotice("로그아웃하지 못했습니다. 다시 눌러 주세요."); }
-  }
 
   async function saveAll() {
     setSaving(true);
@@ -205,14 +185,11 @@ export default function TeacherApp() {
     return (
       <main className="teacher-gate">
         <Link href="/" className="back-student">← 학생 화면</Link>
-        <form onSubmit={login}>
-          <span className="gate-lock" aria-hidden="true" />
-          <small>TEACHER ONLY</small>
-          <h1>교사용 페이지</h1>
-          <p>수업 설정과 출력물을 관리합니다.</p>
-          <label><span>비밀번호</span><input type="password" inputMode="numeric" value={password} onChange={(event) => setPassword(event.target.value)} autoFocus /></label>
-          {loginError && <div className="login-error" role="alert">{loginError}</div>}
-          <button type="submit" disabled={loggingIn}>{loggingIn ? "확인 중…" : "입장하기"}</button>
+        <form onSubmit={(event) => { event.preventDefault(); setLoginError(""); setAuthenticated(null); setRetry((n) => n + 1); }}>
+          <small>TEACHER</small>
+          <h1>교사 설정 화면</h1>
+          <div className="login-error" role="alert">{loginError || "서버에 연결하지 못했습니다."}</div>
+          <button type="submit">다시 연결하기</button>
         </form>
       </main>
     );
@@ -227,7 +204,7 @@ export default function TeacherApp() {
         <nav>
           {NAV_GROUPS.map((group) => <div key={group.title}><span>{group.title}</span>{group.items.map((item) => <button key={item.id} className={section === item.id ? "active" : ""} onClick={() => setSection(item.id)}>{item.label}</button>)}</div>)}
         </nav>
-        <button className="teacher-logout" onClick={logout}>잠금 후 나가기</button>
+        <Link href="/" className="teacher-logout">학생 화면으로</Link>
       </aside>
 
       <main className="teacher-main">

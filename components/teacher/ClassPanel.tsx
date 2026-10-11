@@ -1,12 +1,17 @@
 "use client";
 import { AllergenEditor } from "../recipe/Allergens";
 import type { AppSettings, LessonClass } from "@/lib/types";
+function numericCode(used: string[]) {
+  let code = "";
+  do code = String(100000 + (crypto.getRandomValues(new Uint32Array(1))[0] % 900000)); while (used.includes(code));
+  return code;
+}
 export function ClassPanel({ settings, setSettings, classId, selectClass }: { settings: AppSettings; setSettings: (s:AppSettings)=>void; classId: string; selectClass: (id:string)=>void }) {
   const classes = settings.classes ?? [];
   const lesson = classes.find((x) => x.id === classId);
   function add() {
     const id=crypto.randomUUID();
-    const next: LessonClass={id, name:`새 수업 ${classes.length+1}`, code:id.replaceAll("-", "").slice(0,8).toUpperCase(), waterMl:100, cookMinutes:3, noodleFraction:0.25};
+    const next: LessonClass={id, name:`새 수업 ${classes.length+1}`, code:numericCode(classes.map((x)=>x.code)), waterMl:100, cookMinutes:3, noodleFraction:0.25};
     setSettings({ ...settings, classes:[...classes,next] }); selectClass(id);
   }
   const patch=(change:Partial<LessonClass>) => setSettings({ ...settings, classes: classes.map((x)=> x.id === classId ? {...x,...change}:x) });
