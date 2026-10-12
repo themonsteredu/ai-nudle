@@ -1,0 +1,16 @@
+/* 관리자 화면 (/admin). Reuses the teacher shell; only admin-specific bits live here. */
+.admin-shell .teacher-sidebar { background: #2b1d15; }
+.admin-shell .teacher-sidebar nav button.active { background: var(--green); }
+.admin-to-teacher { display: flex; align-items: center; justify-content: center; min-height: 44px; margin: auto 0 10px; border-radius: 10px; background: rgba(255,255,255,.08); color: #f1e4da; font-size: 13px; font-weight: 800; }
+.admin-shell .teacher-logout { margin-top: 0; }
+.admin-topbar-title { display: block; margin-top: 2px; font-size: 18px; }
+.adm-price-block { margin-top: 22px; }
+.adm-price-block h2 { margin: 0 0 10px; font-size: 20px; }
+.adm-price-block h2 small { color: var(--muted); font-size: 13px; }
+.adm-price-table input { min-width: 96px; }
+.adm-price-table td small { color: var(--muted); font-size: 11px; }
+.adm-price-table tr.adm-off td { color: var(--muted); }
+.teacher-admin-link { display: flex; align-items: center; justify-content: center; min-height: 44px; margin: auto 0 10px; border: 1px dashed rgba(255,255,255,.28); border-radius: 10px; color: #f1e4da; font-size: 13px; font-weight: 800; }
+@media (max-width: 860px) {
+  .admin-to-teacher, .teacher-admin-link { margin: 10px 0 0; }
+}

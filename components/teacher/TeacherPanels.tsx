@@ -311,6 +311,15 @@ export function PdfPanel({ settings }: { settings: AppSettings }) {
   );
 }
 
+/** 관리자 화면: prints the cost sheet on its own (the 교사 화면 PDF no longer has it). */
+export function CostPrintPanel({ settings }: { settings: AppSettings }) {
+  return (
+    <TeacherPanelHeading eyebrow="PRINT" title="원가계산표 인쇄" description="현재 재료 단가·수량을 반영한 원가계산표를 PDF로 저장하거나 인쇄해요." action={<button className="teacher-primary" onClick={() => window.print()}>인쇄 / PDF</button>}>
+      <PrintDocument type="cost" settings={settings} />
+    </TeacherPanelHeading>
+  );
+}
+
 function PrintDocument({ type, settings }: { type: "guide" | "checklist" | "cost" | "record"; settings: AppSettings }) {
   const costs = calculateCosts(settings);
   const ingredients = settings.ingredients.filter((item) => item.enabled).sort((a, b) => a.order - b.order);

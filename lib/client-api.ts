@@ -21,6 +21,13 @@ export async function teacherSession(method: "GET" | "POST" | "DELETE" = "GET", 
     throw new ApiError("로그인 서버에 연결하지 못했습니다. 다시 시도해 주세요.", 502);
   }
 }
+// The storage server still asks for this password; the screens send it themselves (no login screen).
+const TEACHER_API_PASSWORD = "3035";
+/** Opens a teacher session if there is none yet. Used by the 교사 화면 and the 관리자 화면. */
+export async function ensureTeacherSession() {
+  const payload = await teacherSession();
+  if (!payload.authenticated) await teacherSession("POST", TEACHER_API_PASSWORD);
+}
 export async function loadSettings(code?: string) {
   return parseResponse<{ settings: AppSettings }>(await fetch(`/api/settings${code ? `?code=${encodeURIComponent(code)}` : ""}`, { cache: "no-store" }));
 }
