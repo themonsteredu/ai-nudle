@@ -146,8 +146,8 @@ export default function TeacherApp() {
     window.addEventListener("beforeunload", warn);
     return () => window.removeEventListener("beforeunload", warn);
   }, [dirty]);
-  const confirmLeave = (event: React.MouseEvent) => {
-    if (dirty && !window.confirm("저장하지 않은 변경이 있어요. 저장하지 않고 학생 화면으로 갈까요?\n저장하려면 '취소'를 누른 뒤 위의 '설정 저장'을 눌러 주세요.")) event.preventDefault();
+  const confirmLeave = (place: string) => (event: React.MouseEvent) => {
+    if (dirty && !window.confirm(`저장하지 않은 변경이 있어요. 저장하지 않고 ${place}으로 갈까요?\n저장하려면 '취소'를 누른 뒤 위의 '설정 저장'을 눌러 주세요.`)) event.preventDefault();
   };
 
   useEffect(() => {
@@ -289,12 +289,12 @@ export default function TeacherApp() {
   return (
     <div className="teacher-shell">
       <aside className="teacher-sidebar">
-        <Link href="/" className="teacher-brand" onClick={confirmLeave}><span>FOOD R&amp;D</span><strong>교사용 관리센터</strong></Link>
+        <Link href="/" className="teacher-brand" onClick={confirmLeave("학생 화면")}><span>FOOD R&amp;D</span><strong>교사용 관리센터</strong></Link>
         <nav>
           {NAV_GROUPS.map((group) => <div key={group.title}><span>{group.title}</span>{group.items.map((item) => <button key={item.id} className={section === item.id ? "active" : ""} onClick={() => setSection(item.id)}>{item.label}</button>)}</div>)}
         </nav>
-        <Link href="/admin" className="teacher-admin-link" onClick={confirmLeave}>관리자 화면 (원가) →</Link>
-        <Link href="/" className="teacher-logout" onClick={confirmLeave}>학생 화면으로</Link>
+        <Link href="/admin" className="teacher-admin-link" onClick={confirmLeave("관리자 화면")}>관리자 화면 (원가) →</Link>
+        <Link href="/" className="teacher-logout" onClick={confirmLeave("학생 화면")}>학생 화면으로</Link>
       </aside>
 
       <main className="teacher-main">

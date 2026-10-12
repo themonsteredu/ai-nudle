@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
-import { ensureTeacherSession, loadSettings, saveSettings } from "@/lib/client-api";
+import { ApiError, ensureTeacherSession, loadSettings, saveSettings } from "@/lib/client-api";
 import { copyCostFields } from "@/lib/admin-fields";
 import { defaultSettings } from "@/lib/defaults";
 import type { AppSettings, SupplyCategory } from "@/lib/types";
@@ -34,6 +34,8 @@ function readUnlocked() {
   try { return sessionStorage.getItem(UNLOCK_KEY) === "1"; } catch { return false; }
 }
 const noSubscription = () => () => {};
+// Browser errors such as "Failed to fetch" are English; the storage server's own messages are Korean.
+const errorText = (error: unknown, fallback: string) => error instanceof ApiError && error.message ? error.message : fallback;
 
 export default function AdminApp() {
   // The unlock lives in this browser tab only; the server render shows the loading state.
@@ -64,7 +66,7 @@ export default function AdminApp() {
         setDirty(false);
         setReady(true);
       } catch (error) {
-        if (!cancelled) setLoadError(error instanceof Error ? error.message : "저장 서버에 연결하지 못했습니다.");
+        if (!cancelled) setLoadError(errorText(error, "저장 서버에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요."));
       }
     }
     void open();
@@ -77,9 +79,18 @@ export default function AdminApp() {
     return () => window.clearTimeout(timer);
   }, [notice]);
 
+  // Remembers the unlock for reloads of this tab. Locking, or leaving the admin screen inside the app
+  // (a link or the browser's back button), clears it, so the 교사 화면's admin link asks for the PIN again.
+  // A reload runs no cleanup, so it stays unlocked.
+  useEffect(() => {
+    if (!unlocked) return;
+    try { sessionStorage.setItem(UNLOCK_KEY, "1"); } catch { /* the lock simply asks again next time */ }
+    return () => { try { sessionStorage.removeItem(UNLOCK_KEY); } catch { /* nothing to clear */ } };
+  }, [unlocked]);
+
   useEffect(() => {
     if (!dirty) return;
-    const warn = (event: BeforeUnloadEvent) => { event.preventDefault(); };
+    const warn = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ""; };
     window.addEventListener("beforeunload", warn);
     return () => window.removeEventListener("beforeunload", warn);
   }, [dirty]);
@@ -93,14 +104,17 @@ export default function AdminApp() {
   function unlock(event: React.FormEvent) {
     event.preventDefault();
     if (pin !== ADMIN_PIN) { setPinError("비밀번호가 맞지 않아요."); setPin(""); return; }
-    try { sessionStorage.setItem(UNLOCK_KEY, "1"); } catch { /* the lock simply asks again next time */ }
     setPinError(""); setPin(""); setUnlocked(true);
   }
 
   function lock() {
     if (dirty && !window.confirm("저장하지 않은 변경이 있어요. 저장하지 않고 잠글까요?")) return;
-    try { sessionStorage.removeItem(UNLOCK_KEY); } catch { /* nothing to clear */ }
     setUnlocked(false); setReady(false); setDirty(false); setSettingsState(defaultSettings);
+  }
+
+  /** '← 교사 화면으로' asks before dropping unsaved prices; the lock itself happens when this screen closes. */
+  function confirmLeave(event: React.MouseEvent) {
+    if (dirty && !window.confirm("저장하지 않은 변경이 있어요. 저장하지 않고 교사 화면으로 갈까요?\n저장하려면 '취소'를 누른 뒤 위의 '설정 저장'을 눌러 주세요.")) event.preventDefault();
   }
 
   /** Saves only the cost fields on top of the newest server settings, so class and ingredient edits made on the 교사 화면 stay. */
@@ -108,12 +122,13 @@ export default function AdminApp() {
     setSaving(true);
     const editsBefore = editCount.current;
     try {
+      await ensureTeacherSession(); // the server's teacher session ends after 8 hours
       const remote = (await loadSettings()).settings;
       const result = await saveSettings(copyCostFields(remote, settings));
       if (editCount.current === editsBefore) { setSettingsState(result.settings); setDirty(false); }
       setNotice("원가 설정을 저장했어요.");
     } catch (error) {
-      setNotice(error instanceof Error && error.message ? error.message : "저장하지 못했어요. 다시 눌러 주세요.");
+      setNotice(errorText(error, "저장하지 못했어요. 인터넷 연결을 확인하고 다시 눌러 주세요."));
     } finally {
       setSaving(false);
     }
@@ -152,7 +167,7 @@ export default function AdminApp() {
         <nav>
           {NAV_GROUPS.map((group) => <div key={group.title}><span>{group.title}</span>{group.items.map((item) => <button key={item.id} className={section === item.id ? "active" : ""} onClick={() => setSection(item.id)}>{item.label}</button>)}</div>)}
         </nav>
-        <Link href="/teacher" className="admin-to-teacher">← 교사 화면으로</Link>
+        <Link href="/teacher" className="admin-to-teacher" onClick={confirmLeave}>← 교사 화면으로</Link>
         <button className="teacher-logout" onClick={lock}>잠그고 나가기</button>
       </aside>
 
