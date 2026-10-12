@@ -164,6 +164,17 @@ export default function TeacherApp() {
     return () => { cancelled = true; };
   }, [retry]);
 
+  // Unsaved adds and deletes would be lost when the page is closed or reloaded.
+  useEffect(() => {
+    if (!dirty) return;
+    const warn = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ""; };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [dirty]);
+  const confirmLeave = (event: React.MouseEvent) => {
+    if (dirty && !window.confirm("저장하지 않은 변경이 있어요. 저장하지 않고 학생 화면으로 갈까요?\n저장하려면 '취소'를 누른 뒤 위의 '설정 저장'을 눌러 주세요.")) event.preventDefault();
+  };
+
   useEffect(() => {
     if (!notice) return;
     const timer = window.setTimeout(() => setNotice(""), 3000);
@@ -248,6 +259,11 @@ export default function TeacherApp() {
   }
 
   async function saveAll() {
+    const unnamed = settings.ingredients.filter((x) => !(x.displayName || x.name || "").trim()).length;
+    if (unnamed) {
+      setNotice(`이름이 비어 있는 재료가 ${unnamed}개 있어요. '스프·첨가물 관리'에서 이름을 적은 뒤 저장해 주세요.`);
+      return;
+    }
     setSaving(true);
     commitCount.current++;
     const editsBefore = editCount.current;
@@ -299,11 +315,11 @@ export default function TeacherApp() {
   return (
     <div className="teacher-shell">
       <aside className="teacher-sidebar">
-        <Link href="/" className="teacher-brand"><span>FOOD R&amp;D</span><strong>교사용 관리센터</strong></Link>
+        <Link href="/" className="teacher-brand" onClick={confirmLeave}><span>FOOD R&amp;D</span><strong>교사용 관리센터</strong></Link>
         <nav>
           {NAV_GROUPS.map((group) => <div key={group.title}><span>{group.title}</span>{group.items.map((item) => <button key={item.id} className={section === item.id ? "active" : ""} onClick={() => setSection(item.id)}>{item.label}</button>)}</div>)}
         </nav>
-        <Link href="/" className="teacher-logout">학생 화면으로</Link>
+        <Link href="/" className="teacher-logout" onClick={confirmLeave}>학생 화면으로</Link>
       </aside>
 
       <main className="teacher-main">
@@ -312,7 +328,7 @@ export default function TeacherApp() {
           <div className="save-area">{dirty && <i>저장하지 않은 변경</i>}<button onClick={saveAll} disabled={!dirty || saving}>{saving ? "저장 중" : "설정 저장"}</button></div>
         </header>
 
-        {section === "classes" && <ClassPanel settings={settings} setSettings={setSettings} classId={classId} selectClass={(id) => { setProjects([]); setClassId(id); }} />}
+        {section === "classes" && <ClassPanel settings={settings} setSettings={setSettings} classId={classId} selectClass={(id) => { setProjects([]); setClassId(id); }} openSoups={() => { setSection("soups"); window.scrollTo({ top: 0 }); }} />}
         {section === "groups" && <GroupBestPanel key={classId} settings={settings} classId={classId} projects={visibleProjects} commit={(patch, message) => commitLesson(classId, patch, message)} busy={saving} refresh={refreshStudents} loading={studentsLoading} error={studentsError} />}
         {section === "recipes" && <StudentRecipesPanel key={classId} projects={visibleProjects} settings={settings} classId={classId} refresh={refreshStudents} loading={studentsLoading} error={studentsError} />}
         {section === "overview" && (

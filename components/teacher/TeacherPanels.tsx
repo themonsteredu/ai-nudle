@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { calculateCosts, ingredientUnitCost, roundQuantity, won } from "@/lib/costs";
 import { createId } from "@/lib/ids";
+import { ADDITIVE_PRESETS, BASE_CATEGORY, categoryLabel } from "@/lib/ingredient-categories";
 import type {
   AppSettings,
   Ingredient,
@@ -28,22 +29,37 @@ function moveItem<T extends { id: string; order: number }>(items: T[], id: strin
   return ordered.map((item, itemIndex) => ({ ...item, order: itemIndex + 1 }));
 }
 
-const BASE_CATEGORY = "BASE";
-const ADDITIVE_PRESETS = ["향", "단맛", "매운맛", "짠맛", "SPECIAL", "기타"];
-export const categoryLabel = (category: string) => category === BASE_CATEGORY ? "기본 스프" : category === "SPECIAL" ? "특별 (치즈·카레 등)" : category || "기타";
+const CUSTOM_CATEGORY = "__custom__";
 const isBase = (item: Ingredient) => item.category === BASE_CATEGORY;
+/** What students see for an ingredient (availableItems uses displayName || name). */
+const shownName = (item: Ingredient) => (item.displayName || item.name || "").trim();
+const sameName = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase();
 
-/** Swaps an item with its neighbour inside the same section (기본 스프 or 첨가물), then renumbers. */
+/**
+ * Students get one list sorted by `order` (availableItems), so 기본 스프 must come before every 첨가물 there too.
+ * Keeps each section's own order and renumbers 1..n.
+ */
+function baseFirst(items: Ingredient[]) {
+  return [...items]
+    .sort((a, b) => Number(isBase(b)) - Number(isBase(a)) || a.order - b.order)
+    .map((item, index) => item.order === index + 1 ? item : { ...item, order: index + 1 });
+}
+
+/** Swaps an item with its neighbour inside the same section (기본 스프 or 첨가물). */
 function moveWithin(items: Ingredient[], id: string, direction: -1 | 1) {
-  const ordered = [...items].sort((a, b) => a.order - b.order);
-  const item = ordered.find((x) => x.id === id);
-  if (!item) return items;
-  const section = ordered.filter((x) => isBase(x) === isBase(item));
-  const neighbour = section[section.indexOf(item) + direction];
-  if (!neighbour) return items;
-  const a = ordered.indexOf(item), b = ordered.indexOf(neighbour);
-  [ordered[a], ordered[b]] = [ordered[b], ordered[a]];
-  return ordered.map((x, index) => ({ ...x, order: index + 1 }));
+  const ordered = baseFirst(items);
+  const index = ordered.findIndex((x) => x.id === id);
+  const target = index + direction;
+  if (index < 0 || !ordered[target] || isBase(ordered[target]) !== isBase(ordered[index])) return items;
+  [ordered[index], ordered[target]] = [ordered[target], ordered[index]];
+  return ordered.map((x, i) => ({ ...x, order: i + 1 }));
+}
+
+/** Asks for a new 종류 name when '직접 입력…' is picked. */
+function pickCategory(value: string, apply: (category: string) => void) {
+  if (value !== CUSTOM_CATEGORY) return apply(value);
+  const typed = window.prompt("새 종류 이름을 적어 주세요. (예: 감칠맛, 신맛)")?.trim().slice(0, 20);
+  if (typed) apply(typed === categoryLabel(BASE_CATEGORY) ? BASE_CATEGORY : typed);
 }
 
 export function IngredientPanel({
@@ -57,57 +73,78 @@ export function IngredientPanel({
 }) {
   const [newName, setNewName] = useState("");
   const [newCategory, setNewCategory] = useState("향");
+  const [addError, setAddError] = useState("");
   const [open, setOpen] = useState<string | null>(null);
   const [added, setAdded] = useState("");
+  const [recheck, setRecheck] = useState<string[]>([]);
   const categories = Array.from(new Set([...ADDITIVE_PRESETS, ...settings.ingredients.map((x) => x.category).filter((x) => x && x !== BASE_CATEGORY)]));
+  const setIngredients = (ingredients: Ingredient[]) => setSettings({ ...settings, ingredients: baseFirst(ingredients) });
   function update(id: string, change: Partial<Ingredient>) {
-    setSettings({
-      ...settings,
-      ingredients: settings.ingredients.map((item) => item.id === id ? { ...item, ...change } : item),
-    });
+    const item = settings.ingredients.find((x) => x.id === id);
+    // A different product needs its package checked again.
+    if (item?.allergenChecked && change.name !== undefined && change.name !== item.name) {
+      change = { ...change, allergenChecked: false };
+      setRecheck((ids) => ids.includes(id) ? ids : [...ids, id]);
+    }
+    setIngredients(settings.ingredients.map((x) => x.id === id ? { ...x, ...change } : x));
   }
   function add(event: React.FormEvent) {
     event.preventDefault();
     const name = newName.trim();
     if (!name) return;
+    const existing = settings.ingredients.find((x) => sameName(shownName(x), name));
+    if (existing) {
+      setAddError(`'${shownName(existing)}'은(는) 이미 ${isBase(existing) ? "기본 스프" : "첨가물"} 목록에 있어요${existing.enabled ? "" : " (학생 화면에서 숨김 · '학생 표시'를 켜면 돼요)"}. 다른 이름을 적어 주세요.`);
+      return;
+    }
     const id = createId("ingredient");
     const order = Math.max(0, ...settings.ingredients.map((x) => x.order)) + 1;
-    setSettings({
-      ...settings,
-      ingredients: [...settings.ingredients, {
-        id, name, displayName: name, category: newCategory, imageUrl: "",
-        defaultAmount: 0, minAmount: 0, maxAmount: 20, step: 0.1, purchasePrice: 0, purchaseWeight: 100,
-        allergen: "", allergens: [], allergenChecked: false, allergenOther: "", facilityNote: "", enabled: true, order,
-      }],
-    });
+    setIngredients([...settings.ingredients, {
+      id, name, displayName: name, category: newCategory, imageUrl: "",
+      defaultAmount: 0, minAmount: 0, maxAmount: 20, step: 0.1, purchasePrice: 0, purchaseWeight: 100,
+      allergen: "", allergens: [], allergenChecked: false, allergenOther: "", facilityNote: "", enabled: true, order,
+    }]);
     setNewName("");
+    setAddError("");
     setAdded(id);
   }
   function remove(item: Ingredient) {
-    if (!window.confirm(`'${item.displayName || item.name}'을(를) 삭제할까요?\n학생 선택 목록에서 빠지고, 이미 저장한 학생 레시피는 그대로 남아요.\n잠깐만 안 쓰려면 삭제 대신 '학생 표시'를 꺼 주세요.`)) return;
-    setSettings({ ...settings, ingredients: settings.ingredients.filter((x) => x.id !== item.id) });
+    if (!window.confirm(`'${shownName(item)}'을(를) 삭제할까요?\n모든 반의 학생 선택 목록에서 빠지고, 이미 저장한 학생 레시피는 그대로 남아요.\n잠깐만 안 쓰려면 삭제 대신 '학생 표시'를 꺼 주세요.`)) return;
+    setIngredients(settings.ingredients.filter((x) => x.id !== item.id));
     if (open === item.id) setOpen(null);
   }
-  const ordered = [...settings.ingredients].sort((a, b) => a.order - b.order);
+  const ordered = baseFirst(settings.ingredients);
+  const addedItem = ordered.find((x) => x.id === added);
   const sections = [
     { title: "기본 스프", note: "학생 '기본 베이스' 탭에서만 보여요. (쇠고기·멸치·사골 분말 등)", items: ordered.filter(isBase) },
     { title: "첨가물", note: "'기본 베이스'와 '시판 스프' 두 탭 모두에서 보여요.", items: ordered.filter((x) => !isBase(x)) },
   ];
+  const kindOptions = (current: string) => <>
+    <option value={BASE_CATEGORY}>{categoryLabel(BASE_CATEGORY)}</option>
+    {[...categories, ...(current === BASE_CATEGORY || categories.includes(current) ? [] : [current])].map((c) => <option key={c} value={c}>{categoryLabel(c)}</option>)}
+    <option value={CUSTOM_CATEGORY}>직접 입력…</option>
+  </>;
   const row = (item: Ingredient, index: number, count: number) => {
     const expanded = open === item.id;
-    const rename = (displayName: string) => update(item.id, item.name === item.displayName ? { name: displayName, displayName } : { displayName });
-    return <article key={item.id} className={`ing-row${item.enabled ? "" : " off"}${added === item.id ? " new" : ""}`}>
+    const label = shownName(item);
+    // While 학생에게 보이는 이름 follows 재료명, typing changes both; a blank box never clears 재료명.
+    const rename = (displayName: string) => update(item.id, item.name === item.displayName && displayName.trim() ? { name: displayName, displayName } : { displayName });
+    const duplicate = Boolean(label) && ordered.some((x) => x.id !== item.id && sameName(shownName(x), label));
+    return <article key={item.id} id={`ing-${item.id}`} className={`ing-row${item.enabled ? "" : " off"}${added === item.id ? " new" : ""}`}>
       <div className="ing-main">
-        <div className="ing-move"><button onClick={() => setSettings({ ...settings, ingredients: moveWithin(settings.ingredients, item.id, -1) })} disabled={index === 0} aria-label={`${item.displayName} 위로`}>↑</button><button onClick={() => setSettings({ ...settings, ingredients: moveWithin(settings.ingredients, item.id, 1) })} disabled={index === count - 1} aria-label={`${item.displayName} 아래로`}>↓</button></div>
-        <label className="ing-name"><span>학생에게 보이는 이름</span><input value={item.displayName} maxLength={40} onChange={(event) => rename(event.target.value)} placeholder="이름을 적어 주세요" /></label>
-        <label className="ing-kind"><span>종류</span><select value={item.category} onChange={(event) => update(item.id, { category: event.target.value })}><option value={BASE_CATEGORY}>{categoryLabel(BASE_CATEGORY)}</option>{[...categories, ...(categories.includes(item.category) || isBase(item) ? [] : [item.category])].map((c) => <option key={c} value={c}>{categoryLabel(c)}</option>)}</select></label>
+        <div className="ing-move"><button onClick={() => setIngredients(moveWithin(settings.ingredients, item.id, -1))} disabled={index === 0} aria-label={`${label} 위로`}>↑</button><button onClick={() => setIngredients(moveWithin(settings.ingredients, item.id, 1))} disabled={index === count - 1} aria-label={`${label} 아래로`}>↓</button></div>
+        <label className="ing-name"><span>학생에게 보이는 이름</span><input value={item.displayName} maxLength={40} aria-invalid={!label || duplicate} onChange={(event) => rename(event.target.value)} placeholder={item.name.trim() || "이름을 적어 주세요"} /></label>
+        <label className="ing-kind"><span>종류</span><select value={item.category} onChange={(event) => pickCategory(event.target.value, (category) => update(item.id, { category }))}>{kindOptions(item.category)}</select></label>
         <div className="ing-actions">
           <label className="switch-label"><input type="checkbox" checked={item.enabled} onChange={(event) => update(item.id, { enabled: event.target.checked })} /><span />학생 표시</label>
           <button className="ing-more" aria-expanded={expanded} onClick={() => setOpen(expanded ? null : item.id)}>{expanded ? "접기" : "자세히"}</button>
           <button className="danger-text ing-delete" onClick={() => remove(item)}>삭제</button>
         </div>
       </div>
-      <p className="ing-status">{item.allergenChecked ? "알레르기 포장 확인 완료" : "알레르기 포장 확인 전"}{item.enabled ? "" : " · 학생 화면에서 숨김"}</p>
+      {!label && <p className="ing-warn">이름이 비어 있어요. 이름을 적어야 저장할 수 있어요.</p>}
+      {duplicate && <p className="ing-warn">같은 이름이 또 있어요. 학생이 구분할 수 있게 이름을 바꿔 주세요.</p>}
+      {label && !item.displayName.trim() && <p className="ing-warn soft">비워 두면 학생에게 &apos;{label}&apos;(으)로 보여요.</p>}
+      <p className="ing-status">{item.allergenChecked ? "알레르기 포장 확인 완료" : recheck.includes(item.id) ? "재료명이 바뀌어 알레르기 포장 확인을 다시 해 주세요 ('자세히')" : "알레르기 포장 확인 전"}{item.enabled ? "" : " · 학생 화면에서 숨김"}</p>
       {expanded && <div className="ing-detail">
         <div className="admin-item-head">
           <label className="image-upload">
@@ -136,14 +173,15 @@ export function IngredientPanel({
     </article>;
   };
   return (
-    <TeacherPanelHeading eyebrow="SOUP · ADDITIVES" title="스프·첨가물 관리" description="학생 레시피 기록에 나오는 재료예요. 추가·삭제한 뒤 위의 '설정 저장'을 눌러야 학생 화면에 반영돼요.">
+    <TeacherPanelHeading eyebrow="SOUP · ADDITIVES" title="스프·첨가물 관리" description="학생 레시피 기록에 나오는 재료예요. 모든 반에 함께 적용돼요. 추가·삭제한 뒤 위의 '설정 저장'을 눌러야 학생 화면에 반영돼요.">
       <form className="ing-add" onSubmit={add}>
         <strong>새 재료 추가</strong>
-        <label><span>이름</span><input value={newName} maxLength={40} onChange={(event) => setNewName(event.target.value)} placeholder="예: 다시마분말, 간장분말" /></label>
-        <label><span>종류</span><select value={newCategory} onChange={(event) => setNewCategory(event.target.value)}><option value={BASE_CATEGORY}>{categoryLabel(BASE_CATEGORY)}</option>{categories.map((c) => <option key={c} value={c}>{categoryLabel(c)}</option>)}</select></label>
+        <label><span>이름</span><input value={newName} maxLength={40} onChange={(event) => { setNewName(event.target.value); setAddError(""); }} placeholder="예: 다시마분말, 간장분말" /></label>
+        <label><span>종류</span><select value={newCategory} onChange={(event) => pickCategory(event.target.value, setNewCategory)}>{kindOptions(newCategory)}</select></label>
         <button className="teacher-primary" disabled={!newName.trim()}>＋ 추가</button>
       </form>
-      {added && settings.ingredients.some((x) => x.id === added) && <p className="ing-added" role="status">추가했어요. 위의 &apos;설정 저장&apos;을 눌러 주세요. 알레르기는 &apos;자세히&apos;에서 포장을 보고 체크해 주세요.</p>}
+      {addError && <p className="ing-added ing-error" role="alert">{addError}</p>}
+      {addedItem && <p className="ing-added" role="status">추가했어요. &apos;{shownName(addedItem)}&apos;은(는) 아래 {isBase(addedItem) ? "기본 스프" : "첨가물"} 목록에 있어요. 위의 &apos;설정 저장&apos;을 눌러 주세요. 알레르기는 &apos;자세히&apos;에서 포장을 보고 체크해 주세요. <button type="button" className="ing-jump" onClick={() => document.getElementById(`ing-${addedItem.id}`)?.scrollIntoView({ behavior: "smooth", block: "center" })}>추가한 재료 보기 ↓</button></p>}
       {sections.map((section) => <section className="ing-section" key={section.title}>
         <header><h2>{section.title} <small>{section.items.length}개</small></h2><p>{section.note}</p></header>
         {section.items.length ? section.items.map((item, index) => row(item, index, section.items.length)) : <p className="empty-record">아직 없어요. 위에서 추가해 주세요.</p>}

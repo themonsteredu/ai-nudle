@@ -19,14 +19,20 @@
 .ing-row.new { border-color: var(--orange); box-shadow: 0 0 0 3px rgba(239, 106, 40, .15); }
 .ing-main { display: grid; grid-template-columns: auto minmax(0, 1fr) minmax(130px, 190px) auto; align-items: end; gap: 12px; }
 .ing-move { display: flex; gap: 4px; }
-.ing-move button { width: 36px; height: 46px; border: 1px solid var(--line); border-radius: 10px; background: #fffdf9; color: var(--brown-2); font-weight: 900; cursor: pointer; }
+.ing-move button { width: 44px; height: 46px; border: 1px solid var(--line); border-radius: 10px; background: #fffdf9; color: var(--brown-2); font-weight: 900; cursor: pointer; }
 .ing-move button:disabled { opacity: .3; cursor: default; }
 .ing-name, .ing-kind { display: flex; min-width: 0; flex-direction: column; gap: 6px; }
 .ing-actions { display: flex; align-items: center; gap: 6px; min-height: 46px; }
-.ing-actions .switch-label { margin: 0 4px 0 0; font-size: 12px; }
+.ing-actions .switch-label { min-height: 44px; margin: 0 4px 0 0; font-size: 12px; }
 .ing-more, .ing-delete { min-height: 44px; border: 1px solid var(--line); border-radius: 10px; background: #fffdf9; padding: 0 12px; font-size: 12px; font-weight: 800; cursor: pointer; }
 .ing-delete { border-color: #ecc9c4; }
 .ing-status { margin: 8px 0 0; color: var(--muted); font-size: 12px; }
+.ing-warn { margin: 8px 0 0; color: var(--red); font-size: 12px; font-weight: 800; }
+.ing-warn.soft { color: var(--muted); font-weight: 700; }
+.ing-name input[aria-invalid="true"] { border-color: var(--red); }
+.ing-added.ing-error { background: #fbeeec; color: var(--red); }
+.ing-jump { min-height: 44px; margin-left: 4px; border: 1px solid #b9d3c1; border-radius: 10px; background: white; padding: 0 12px; color: var(--green); font-size: 12px; font-weight: 800; cursor: pointer; }
+.ing-link { display: inline-block; min-height: 44px; border: 0; background: none; padding: 0 2px; color: var(--orange-deep); font: inherit; font-weight: 800; text-decoration: underline; text-underline-offset: 3px; vertical-align: middle; cursor: pointer; }
 .ing-detail { margin-top: 14px; border-top: 1px solid #ece4d9; padding-top: 14px; }
 .ing-detail .admin-item-head { border-bottom: 0; padding-bottom: 0; grid-template-columns: 74px 1fr; }
 .soup-row .ing-main { grid-template-columns: auto minmax(0, 1fr) auto; }
@@ -44,7 +50,6 @@
 }
 @media (max-width: 560px) {
   .ing-add { grid-template-columns: 1fr; }
-  .ing-move button { width: 34px; }
   .ing-actions .switch-label { margin-right: auto; }
   .ing-detail .admin-form-grid.four { grid-template-columns: 1fr; }
 }
