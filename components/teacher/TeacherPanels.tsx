@@ -164,9 +164,6 @@ export function IngredientPanel({
           <Field label="최소량 (g)"><input type="number" step="0.1" value={item.minAmount} onChange={(event) => update(item.id, { minAmount: numeric(event.target.value) })} /></Field>
           <Field label="최대량 (g)"><input type="number" step="0.1" value={item.maxAmount} onChange={(event) => update(item.id, { maxAmount: numeric(event.target.value) })} /></Field>
           <Field label="조절 단위 (g)"><input type="number" step="0.1" value={item.step} onChange={(event) => update(item.id, { step: Math.max(0.1, numeric(event.target.value)) })} /></Field>
-          <Field label="구입가격 (원)"><input type="number" value={item.purchasePrice} onChange={(event) => update(item.id, { purchasePrice: numeric(event.target.value) })} /></Field>
-          <Field label="구입중량 (g)"><input type="number" value={item.purchaseWeight} onChange={(event) => update(item.id, { purchaseWeight: numeric(event.target.value) })} /></Field>
-          <div className="calculated-field"><span>자동계산</span><strong>{ingredientUnitCost(item.purchasePrice, item.purchaseWeight).toFixed(1)}원/g</strong></div>
         </div>
         <AllergenEditor value={item} onChange={(change) => update(item.id, change)} />
       </div>}
@@ -210,7 +207,7 @@ export function ToppingPanel({
     }] });
   }
   return (
-    <TeacherPanelHeading eyebrow="TOPPINGS" title="건더기 재료 관리" description="수업에 사용할 건더기만 켜 두면 준비물과 원가에 자동 반영됩니다." action={<button className="teacher-primary" onClick={add}>＋ 건더기 추가</button>}>
+    <TeacherPanelHeading eyebrow="TOPPINGS" title="건더기 재료 관리" description="수업에 사용할 건더기만 켜 두면 준비물 목록에 자동 반영됩니다. 구입가격은 관리자 화면 '재료 단가'에서 적어요." action={<button className="teacher-primary" onClick={add}>＋ 건더기 추가</button>}>
       <div className="teacher-list ingredient-admin-list">
         {[...settings.toppings].sort((a, b) => a.order - b.order).map((item, index) => (
           <article className={`admin-item ${item.enabled ? "" : "disabled-item"}`} key={item.id}>
@@ -228,9 +225,6 @@ export function ToppingPanel({
               <Field label="학생 표시명"><input value={item.displayName} onChange={(event) => update(item.id, { displayName: event.target.value })} /></Field>
               <Field label="1인 사용량 (g)"><input type="number" step="0.1" value={item.amountPerStudent} onChange={(event) => update(item.id, { amountPerStudent: numeric(event.target.value) })} /></Field>
 
-              <Field label="구입가격 (원)"><input type="number" value={item.purchasePrice} onChange={(event) => update(item.id, { purchasePrice: numeric(event.target.value) })} /></Field>
-              <Field label="구입중량 (g)"><input type="number" value={item.purchaseWeight} onChange={(event) => update(item.id, { purchaseWeight: numeric(event.target.value) })} /></Field>
-              <div className="calculated-field"><span>자동계산</span><strong>{ingredientUnitCost(item.purchasePrice, item.purchaseWeight).toFixed(1)}원/g</strong></div>
             </div>
             <AllergenEditor value={item} onChange={(change) => update(item.id, change)} />
           </article>
@@ -335,13 +329,12 @@ export function LabelsPanel({ settings, projects }: { settings: AppSettings; pro
 }
 
 export function PdfPanel({ settings }: { settings: AppSettings }) {
-  const [document, setDocument] = useState<"guide" | "checklist" | "cost" | "record">("guide");
+  const [document, setDocument] = useState<"guide" | "checklist" | "record">("guide");
   return (
-    <TeacherPanelHeading eyebrow="PRINT PDF" title="교사용 PDF" description="현재 재료명·단가·수량을 반영한 문서를 브라우저에서 PDF로 저장합니다." action={<button className="teacher-primary" onClick={() => window.print()}>현재 문서 인쇄 / PDF</button>}>
+    <TeacherPanelHeading eyebrow="PRINT PDF" title="교사용 PDF" description="현재 재료명·수량을 반영한 문서를 브라우저에서 PDF로 저장합니다. 원가계산표는 관리자 화면에서 인쇄해요." action={<button className="teacher-primary" onClick={() => window.print()}>현재 문서 인쇄 / PDF</button>}>
       <div className="document-tabs">
         <button className={document === "guide" ? "active" : ""} onClick={() => setDocument("guide")}>수업지도안</button>
         <button className={document === "checklist" ? "active" : ""} onClick={() => setDocument("checklist")}>준비물 체크리스트</button>
-        <button className={document === "cost" ? "active" : ""} onClick={() => setDocument("cost")}>원가계산표</button>
         <button className={document === "record" ? "active" : ""} onClick={() => setDocument("record")}>학생 실험 기록지</button>
       </div>
       <PrintDocument type={document} settings={settings} />

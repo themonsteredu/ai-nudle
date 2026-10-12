@@ -2,16 +2,15 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { ApiError, loadSettings, loadStudents, saveSettings, teacherSession } from "@/lib/client-api";
+import { ApiError, ensureTeacherSession, loadSettings, loadStudents, saveSettings } from "@/lib/client-api";
+import { copyCostFields } from "@/lib/admin-fields";
 import { defaultSettings } from "@/lib/defaults";
-import type { AppSettings, StudentProject, SupplyCategory } from "@/lib/types";
+import type { AppSettings, StudentProject } from "@/lib/types";
 import {
   ChecklistPanel,
-  CostPanel,
   IngredientPanel,
   LabelsPanel,
   PdfPanel,
-  SupplyPanel,
   ToppingPanel,
 } from "./teacher/TeacherPanels";
 import { ClassPanel } from "./teacher/ClassPanel";
@@ -30,12 +29,6 @@ type TeacherSection =
   | "ingredients"
   | "soups"
   | "toppings"
-  | "noodle"
-  | "tasting"
-  | "container"
-  | "consumable"
-  | "tool"
-  | "cost"
   | "checklist"
   | "labels"
   | "pdf";
@@ -53,14 +46,6 @@ const NAV_GROUPS: { title: string; items: { id: TeacherSection; label: string }[
     { id: "ingredients", label: "스프·첨가물 관리" },
     { id: "soups", label: "시판 스프 관리" },
     { id: "toppings", label: "건더기 관리" },
-    { id: "noodle", label: "사리면 설정" },
-    { id: "tasting", label: "시식컵 설정" },
-    { id: "container", label: "최종 용기 설정" },
-    { id: "consumable", label: "기타 소모품" },
-    { id: "tool", label: "수업도구" },
-  ] },
-  { title: "원가", items: [
-    { id: "cost", label: "원가 자동계산" },
   ] },
   { title: "출력", items: [
     { id: "checklist", label: "준비물 목록" },
@@ -69,29 +54,20 @@ const NAV_GROUPS: { title: string; items: { id: TeacherSection; label: string }[
   ] },
 ];
 
-// 교사 인증을 없앴기 때문에 서버 세션 발급용 값을 화면에서 자동으로 보냅니다.
-const TEACHER_PASSWORD = "3035";
-
 /**
  * The blind vote belongs to the server: it changes only through commitLesson and may be run from another
  * teacher device. Every save therefore sends the newest saved round of each class, never this screen's copy.
  */
 function withServerRounds(local: AppSettings, remote: AppSettings): AppSettings {
-  return { ...local, classes: local.classes?.map((lesson) => {
+  // Prices and purchase lists are edited on the 관리자 화면 only, so the saved ones always win here too.
+  const withCosts = copyCostFields(local, remote);
+  return { ...withCosts, classes: withCosts.classes?.map((lesson) => {
     const saved = remote.classes?.find((x) => x.id === lesson.id)?.blindRound;
     const { blindRound: _, ...rest } = lesson;
     void _;
     return saved ? { ...rest, blindRound: saved } : rest;
   }) };
 }
-
-const SUPPLY_SECTION: Partial<Record<TeacherSection, SupplyCategory>> = {
-  noodle: "noodle",
-  tasting: "tasting",
-  container: "container",
-  consumable: "consumable",
-  tool: "tool",
-};
 
 export default function TeacherApp() {
   const [authenticated, setAuthenticated] = useState<boolean | null>(null);
@@ -148,8 +124,7 @@ export default function TeacherApp() {
     async function check() {
       try {
         // 교사 인증 화면 없이 바로 입장합니다. 서버 세션이 없으면 자동으로 발급받습니다.
-        const payload = await teacherSession();
-        if (!payload.authenticated) await teacherSession("POST", TEACHER_PASSWORD);
+        await ensureTeacherSession();
         if (cancelled) return;
         await loadTeacherData();
         if (!cancelled) setAuthenticated(true);
@@ -310,7 +285,6 @@ export default function TeacherApp() {
     );
   }
 
-  const supplyCategory = SUPPLY_SECTION[section];
   const visibleProjects = projects.filter((p) => classId === "legacy" ? !p.classId : p.classId === classId);
   return (
     <div className="teacher-shell">
@@ -319,6 +293,7 @@ export default function TeacherApp() {
         <nav>
           {NAV_GROUPS.map((group) => <div key={group.title}><span>{group.title}</span>{group.items.map((item) => <button key={item.id} className={section === item.id ? "active" : ""} onClick={() => setSection(item.id)}>{item.label}</button>)}</div>)}
         </nav>
+        <Link href="/admin" className="teacher-admin-link" onClick={confirmLeave}>관리자 화면 (원가) →</Link>
         <Link href="/" className="teacher-logout" onClick={confirmLeave}>학생 화면으로</Link>
       </aside>
 
@@ -345,8 +320,6 @@ export default function TeacherApp() {
         {section === "ingredients" && <IngredientPanel settings={settings} setSettings={setSettings} uploadImage={uploadImage} />}
         {section === "soups" && <ComparisonSoupPanel settings={settings} setSettings={setSettings} />}
         {section === "toppings" && <ToppingPanel settings={settings} setSettings={setSettings} uploadImage={uploadImage} />}
-        {supplyCategory && <SupplyPanel settings={settings} setSettings={setSettings} category={supplyCategory} />}
-        {section === "cost" && <CostPanel settings={settings} />}
         {section === "checklist" && <ChecklistPanel settings={settings} />}
         {section === "labels" && <LabelsPanel settings={settings} projects={visibleProjects} />}
         {section === "pdf" && <PdfPanel settings={settings} />}

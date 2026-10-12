@@ -1,8 +1,8 @@
 "use client";
 import { ingredientUnitCost } from "@/lib/costs";
+import { categoryLabel } from "@/lib/ingredient-categories";
 import type { AppSettings, Ingredient, Topping } from "@/lib/types";
 const numeric = (value: string) => Number.isFinite(Number(value)) && Number(value) >= 0 ? Number(value) : 0;
-const kind = (category: string) => category === "BASE" ? "기본 스프" : category === "SPECIAL" ? "특별" : category || "기타";
 /** Purchase price and weight of soups, additives and toppings. Adding or deleting items stays on the 교사 화면. */
 export function PricePanel({ settings, setSettings }: { settings: AppSettings; setSettings: (s: AppSettings) => void }) {
   const ingredients = [...settings.ingredients].sort((a, b) => a.order - b.order);
@@ -14,7 +14,7 @@ export function PricePanel({ settings, setSettings }: { settings: AppSettings; s
     {rows.length ? <div className="supply-table-wrap"><table className="admin-table adm-price-table"><thead><tr><th>이름</th><th>종류</th><th>구입가격 (원)</th><th>구입중량 (g)</th><th>g당 단가</th></tr></thead>
       <tbody>{rows.map((item) => <tr key={item.id} className={item.enabled ? "" : "adm-off"}>
         <td><strong>{item.displayName || item.name}</strong>{!item.enabled && <small> · 숨김</small>}</td>
-        <td>{"category" in item ? kind(item.category) : "건더기"}</td>
+        <td>{"category" in item ? categoryLabel(item.category) : "건더기"}</td>
         <td><input type="number" min="0" inputMode="numeric" aria-label={`${item.displayName} 구입가격`} value={item.purchasePrice} onChange={(e) => update(item.id, { purchasePrice: numeric(e.target.value) })} /></td>
         <td><input type="number" min="0" inputMode="decimal" aria-label={`${item.displayName} 구입중량`} value={item.purchaseWeight} onChange={(e) => update(item.id, { purchaseWeight: numeric(e.target.value) })} /></td>
         <td><strong>{ingredientUnitCost(item.purchasePrice, item.purchaseWeight).toFixed(1)}원/g</strong></td>
