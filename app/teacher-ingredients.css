@@ -53,3 +53,4 @@
   .ing-actions .switch-label { margin-right: auto; }
   .ing-detail .admin-form-grid.four { grid-template-columns: 1fr; }
 }
+.one-recipe { max-width: 760px; }

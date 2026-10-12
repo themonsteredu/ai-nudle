@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
-import { blankRecord, copyToTasting, emptyNotebook, METHOD_NAMES, formatGrams } from "@/lib/notebook";
+import { blankRecord, copyToTasting, emptyNotebook, formatGrams } from "@/lib/notebook";
 import type { RecipeMethod, RecipeRecord } from "@/lib/types";
 import { useNotebookSession } from "./student/useNotebookSession";
 import { RecipeEditor, RecipeReadout } from "./student/RecipeNotebook";
@@ -16,7 +16,8 @@ export default function StudentApp() {
   const session = useNotebookSession();
   const { project, settings, status, busy, join, update } = session;
   const [code, setCode] = useState("");
-  const [method, setMethod] = useState<RecipeMethod>("base");
+  // Classes use the 기본 베이스 only. Older records may still hold a 시판 스프 part; it stays saved but is not shown.
+  const method: RecipeMethod = "base";
   const [section, setSection] = useState<"record" | "label" | "share" | "vote">("record");
   const [pickingGroup, setPickingGroup] = useState(false);
   const [selected, setSelected] = useState<Record<RecipeMethod, string>>({ base: "", commercial: "" });
@@ -65,16 +66,15 @@ export default function StudentApp() {
   return <div className="student-shell notebook-shell"><aside className="student-sidebar"><button className="brand" onClick={() => setSection("record")}><span className="brand-kicker">FOOD R&amp;D LAB</span><strong>라면 연구소</strong></button><nav className="student-nav">{nav.map(([id,label]) => <button key={id} className={`${section === id ? "active" : ""}${id === "vote" && round?.status === "voting" ? " gb-nav-vote" : ""}`} onClick={() => setSection(id)}>{label}</button>)}</nav><div className="notebook-session"><strong>{groupLabel(group)}{project.researcherNumber ? ` · ${project.researcherNumber}번 연구원` : ""}</strong><p>{lesson.name}</p><button onClick={session.exportDraft}>기록 내려받기</button><button onClick={() => groupLocked ? window.alert(lockMessage) : setPickingGroup(true)}>모둠 바꾸기</button><button onClick={() => { if (window.confirm("다른 학생이 사용하나요? 지금 기록은 보관하고 새 기록을 엽니다.")) void join(session.code, true); }}>다른 학생 시작</button><button onClick={leave}>수업 나가기</button></div></aside>
     <main className="student-main"><header className="student-topbar"><div className="gb-topbar-title"><strong>{lesson.name}</strong><span className="gb-mygroup">{groupLabel(group)}</span></div><span className="save-status" role="status">{status}</span></header><section className="content-stage notebook-content">
       {round?.status === "voting" && section !== "vote" && <button className="gb-vote-banner" onClick={() => setSection("vote")}><span>블라인드 투표 중</span><strong>{myVote ? `내 선택: 레시피 ${myVote}` : "가장 맛있었던 레시피를 골라 주세요"}</strong><em>{myVote ? "바꾸러 가기" : "투표하러 가기"}</em></button>}
-      {section === "record" && <><div className="page-heading"><div><span className="eyebrow">MY RECIPE</span><h1>내 레시피와 맛 기록</h1></div></div><div className="test-tabs" role="tablist" aria-label="연구 방법">{(["base", "commercial"] as const).map((m) => <button key={m} role="tab" aria-selected={method === m} className={method === m ? "active" : ""} onClick={() => setMethod(m)}>{METHOD_NAMES[m]}</button>)}</div>
+      {section === "record" && <><div className="page-heading"><div><span className="eyebrow">MY RECIPE</span><h1>내 레시피와 맛 기록</h1></div></div>
       <p className="lesson-settings">선생님 설정 · 물 {lesson.waterMl}ml · 라면사리 {lesson.noodleFraction}개 · 기다리는 시간 {lesson.cookMinutes}분</p>
-      {method === "commercial" && <details className="comparison-notes"><summary>시판 스프 맛 메모 (선택)</summary><p>같은 양의 물에 맛본 느낌을 남겨도 좋아요.</p>{settings.comparisonSoups?.map((soup,i) => soup.enabled && <label className="admin-field" key={soup.id}><span>스프 {String.fromCharCode(65+i)}</span><input placeholder="맛 느낌 한 줄" maxLength={500} value={notebook.comparisons[soup.id] ?? ""} onChange={(e) => setNotebook({ ...notebook, comparisons: { ...notebook.comparisons, [soup.id]: e.target.value } })} /></label>)}</details>}
       <div className="notebook-record-nav"><div><h2>국물 연습 기록</h2><p>필요할 때 새 기록을 추가해요.</p></div><button className="teacher-primary" onClick={newPractice}>국물 연습 추가</button></div>
       <div className="record-pills">{data.practices.map((record,i) => <button key={record.id} className={selected[method] === record.id ? "active" : ""} onClick={() => setSelected({ ...selected, [method]: record.id })}>연습 {i+1}</button>)}{!data.practices.length && <p>아직 국물 연습 기록이 없어요.</p>}</div>
       <div className="tasting-entry"><div><h2>라면 시식 기록</h2><p>이 방식으로 라면사리를 넣어 한 번 맛봐요.</p></div><button onClick={() => { if (!data.tasting) setNotebook({ ...notebook, [method]: { ...data, tasting: blankRecord(lesson) } }); setSelected({ ...selected, [method]: "tasting" }); }}>{data.tasting ? "라면 기록 열기" : "라면 기록 쓰기"}</button></div>
       {activeRecord && <RecipeEditor key={`${method}-${activeRecord.id}`} record={activeRecord} onChange={changeRecord} settings={settings} method={method} tasting={selected[method] === "tasting"} title={selected[method] === "tasting" ? "라면 시식" : `국물 연습 ${data.practices.findIndex((r) => r.id === activeRecord.id)+1}`} onCopy={selected[method] !== "tasting" ? () => copy(activeRecord) : undefined} />}
       {data.tastingHistory.length > 0 && <details className="practice-history"><summary>이전 라면 기록 보기 ({data.tastingHistory.length})</summary>{data.tastingHistory.map((r,i) => <RecipeReadout key={`${r.id}-${i}`} record={r} settings={settings} noodles title={`이전 기록 ${i+1}`} />)}</details>}
       </>}
-      {section === "label" && <FinalRecipe key={project.id} project={project} settings={settings} group={group} round={round} patch={session.patch} refresh={session.refreshSettings} onGoRecord={(m) => { setMethod(m); setSection("record"); }} />}
+      {section === "label" && <FinalRecipe key={project.id} project={project} settings={settings} group={group} round={round} patch={session.patch} refresh={session.refreshSettings} onGoRecord={() => setSection("record")} />}
       {section === "share" && <ClassGallery key={project.classId} settings={settings} code={session.code} />}
       {section === "vote" && <BlindVote key={project.id} project={project} round={round} refresh={session.refreshSettings} patch={session.patch} onBack={() => setSection("record")} />}
     </section></main></div>;
