@@ -46,6 +46,11 @@ export function GroupBestPanel({ settings, classId, projects, commit, busy, refr
   const cardWinner = (label: string) => round?.status !== "voting" && winners.has(label);
   const emptyRecipe = (p?: StudentProject) => !p?.notebook?.final?.record.items.some((x) => x.amount > 0);
   const emptyGroups = round ? [] : groups.filter((g) => latest.has(g) && emptyRecipe(latest.get(g)));
+  // Older classes also used 시판 스프. Before the start such groups are asked to submit again (like an empty recipe);
+  // once a round holds one, its 스프 A/B… letters are matched to the products here, never on the cards that go on the board.
+  const oldGroups = round ? [] : groups.filter((g) => latest.get(g)?.notebook?.final?.method === "commercial");
+  const oldIds = new Set(samples.flatMap((x) => { const final = byId.get(x.projectId)?.notebook?.final; return final?.method === "commercial" ? final.record.items.filter((i) => i.amount > 0).map((i) => i.id) : []; }));
+  const oldSoups = (settings.comparisonSoups ?? []).flatMap((soup, i) => oldIds.has(soup.id) ? [`스프 ${String.fromCharCode(65 + i)} = ${soup.name || "이름 없음"}`] : []);
 
   // Every change re-checks the newest saved round, so two teacher screens never undo each other.
   // A round that was revealed once can never be opened for voting again.
@@ -82,8 +87,10 @@ export function GroupBestPanel({ settings, classId, projects, commit, busy, refr
   const submissions = <section className="gb-block" aria-labelledby="gb-submit-title">
     <header><div><h2 id="gb-submit-title">모둠 제출 현황</h2><p>학생 화면 &apos;모둠 베스트 제출&apos;에서 낸 레시피예요. 레시피 내용은 블라인드 카드에서만 보여요. 모둠 수는 &apos;수업·반 설정&apos;에서 바꿔요.</p></div><strong className="gb-count">{latest.size} / {groupCount} 모둠 제출</strong></header>
     <ul className="gb-chips">{groups.map((g) => <li key={g} className={!latest.has(g) ? "" : emptyGroups.includes(g) ? "done warn" : "done"}><b>{groupLabel(g)}</b><span>{!latest.has(g) ? "미제출" : emptyGroups.includes(g) ? "제출 · 재료 없음" : "제출"}</span></li>)}</ul>
-    {(multi.length > 0 || ungrouped > 0 || emptyGroups.length > 0 || round) && <ul className="gb-notes">
+    {(multi.length > 0 || ungrouped > 0 || emptyGroups.length > 0 || oldGroups.length > 0 || round) && <ul className="gb-notes">
       {emptyGroups.length > 0 && <li>{emptyGroups.map(groupLabel).join(", ")}은 재료가 없는 레시피를 냈어요. 시작하기 전에 다시 제출해 달라고 해 주세요.</li>}
+      {oldGroups.length > 0 && <li>{oldGroups.map(groupLabel).join(", ")}은 예전 시판 스프 레시피가 제출되어 있어요. 시작하기 전에 라면 시식 기록으로 다시 제출해 달라고 해 주세요.</li>}
+      {oldSoups.length > 0 && <li>예전 시판 스프 레시피의 스프(교사용): {oldSoups.join(" · ")}</li>}
       {multi.length > 0 && <li>{multi.map(groupLabel).join(", ")}은 여러 기기에서 제출했어요. 가장 최근에 제출한 레시피 하나만 투표에 올라가요. (학생 기기 시각 기준)</li>}
       {ungrouped > 0 && <li>모둠을 고르지 않고 제출한 기록 {ungrouped}개는 투표에서 빠져요.</li>}
       {round && <li>투표가 시작된 뒤 새로 낸 레시피는 이번 투표에 들어가지 않아요. 넣으려면 &apos;투표 초기화&apos; 후 다시 시작해 주세요.</li>}
@@ -143,7 +150,7 @@ function SampleCard({ sample, project, loaded, settings, revealed, winner, onOpe
     <header><span className="gb-letter" aria-hidden="true">{sample.label}</span><div><small>블라인드 레시피</small><h3>레시피 {sample.label}</h3></div>{winner && <em className="gb-win">1위</em>}</header>
     {revealed && <div className="gb-reveal"><b>{group ? groupLabel(group) : "모둠 정보 없음"}</b><strong>{final?.productName || "이름 없는 라면"}</strong>{final?.tasteLine && <p>{final.tasteLine}</p>}</div>}
     {final ? <div className="gb-card-body"><div>
-      <p className="gb-cook">{[METHOD_NAMES[final.method], `물 ${final.record.waterMl}ml`, `면 ${final.record.noodleFraction}개`, `조리 ${final.record.cookMinutes}분`, `맵기 ${final.spicyLevel}단계`].map((x) => <span key={x}>{x}</span>)}</p>
+      <p className="gb-cook">{[...(final.method === "commercial" ? [METHOD_NAMES.commercial] : []), `물 ${final.record.waterMl}ml`, `면 ${final.record.noodleFraction}개`, `조리 ${final.record.cookMinutes}분`, `맵기 ${final.spicyLevel}단계`].map((x) => <span key={x}>{x}</span>)}</p>
       {items.length ? <dl>{items.map((x) => <div key={x.id}><dt>{x.name}</dt><dd>{formatGrams(x.amount)}</dd></div>)}</dl> : <p className="gb-muted">넣은 재료가 없어요.</p>}
     </div><AllergenNotice record={final.record} settings={settings} noodles /></div>
       : <p className="gb-muted">{loaded ? "이 레시피를 찾지 못했어요. 학생 기록을 확인해 주세요." : "레시피를 불러오는 중이에요."}</p>}

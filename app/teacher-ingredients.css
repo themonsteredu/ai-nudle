@@ -1,4 +1,4 @@
-/* 스프·첨가물 관리 / 시판 스프 관리 (teacher). Class names use the "ing-" / "soup-" prefix. */
+/* 스프·첨가물 관리 (teacher). Class names use the "ing-" prefix. */
 .ing-add { display: grid; grid-template-columns: auto minmax(0, 1fr) minmax(150px, 220px) auto; align-items: end; gap: 12px; margin: 0 0 14px; border: 1px solid var(--line); border-radius: 18px; background: white; padding: 18px 20px; }
 .ing-add > strong { align-self: center; color: var(--brown); font-size: 15px; }
 .ing-add label { display: flex; min-width: 0; flex-direction: column; gap: 6px; }
@@ -35,8 +35,6 @@
 .ing-link { display: inline-block; min-height: 44px; border: 0; background: none; padding: 0 2px; color: var(--orange-deep); font: inherit; font-weight: 800; text-decoration: underline; text-underline-offset: 3px; vertical-align: middle; cursor: pointer; }
 .ing-detail { margin-top: 14px; border-top: 1px solid #ece4d9; padding-top: 14px; }
 .ing-detail .admin-item-head { border-bottom: 0; padding-bottom: 0; grid-template-columns: 74px 1fr; }
-.soup-row .ing-main { grid-template-columns: auto minmax(0, 1fr) auto; }
-.soup-letter { display: grid; width: 46px; height: 46px; place-items: center; border-radius: 12px; background: var(--brown); color: white; font-size: 22px; font-weight: 900; }
 
 @media (max-width: 860px) {
   .ing-add { grid-template-columns: 1fr 1fr; }
@@ -45,7 +43,6 @@
   .ing-main { grid-template-columns: auto minmax(0, 1fr); }
   .ing-kind { grid-column: 1 / -1; }
   .ing-actions { grid-column: 1 / -1; flex-wrap: wrap; justify-content: flex-end; }
-  .soup-row .ing-main { grid-template-columns: auto minmax(0, 1fr); }
   .ing-detail .admin-form-grid.four { grid-template-columns: 1fr 1fr; }
 }
 @media (max-width: 560px) {

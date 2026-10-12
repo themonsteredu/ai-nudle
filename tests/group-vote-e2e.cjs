@@ -35,7 +35,7 @@ let debugPage = null;
  const studentLesson = async () => (await (await anonymous.get('/api/settings?code='+code)).json()).settings.classes[0];
  const first = await studentLesson();
  assert.equal(first.code,'');assert.equal(first.groupCount,4);assert.equal(first.blindRound,undefined);
- // Ingredients the base-method editor shows (labels are "<name> 양(g)").
+ // Ingredients the 기본 베이스 editor shows (labels are "<name> 양(g)"); the class uses the 기본 베이스 only.
  const ingredients = savedSettings.ingredients.filter(x=>x.enabled).sort((a,b)=>a.order-b.order).map(x=>x.displayName||x.name);
  assert(ingredients.length>=6,'need at least 6 enabled ingredients');
 
@@ -68,12 +68,18 @@ let debugPage = null;
  const secrets = recipes.flatMap(r=>[r.name,r.line]);
  async function submitBest(p,r,shotName){
   await nav(p,'레시피 기록').click();
+  assert.equal(await p.getByRole('tab').count(),0,'no 기본 베이스/시판 스프 tabs on the record page');
   await p.getByRole('button',{name:'라면 기록 쓰기',exact:true}).click();
   for(const [name,grams] of r.items) await p.getByLabel(`${name} 양(g)`,{exact:true}).fill(grams);
   await p.getByLabel('맛 느낌 한 줄',{exact:true}).fill(r.note);
   await nav(p,'모둠 베스트 제출').click();
   await p.getByText('미제출',{exact:true}).waitFor();
-  await p.getByLabel('제출할 라면 기록',{exact:true}).selectOption('base');
+  // No record picker: the 기본 베이스 라면 시식 record is what the group submits.
+  assert.equal(await p.getByLabel('제출할 라면 기록',{exact:true}).count(),0,'no 제출할 라면 기록 picker');
+  const readout = p.locator('.final-notebook .recipe-readout');
+  assert.equal(await readout.locator('h3').innerText(),'제출할 라면 시식 기록');
+  for(const [name,grams] of r.items) assert.match(await readout.innerText(),new RegExp(`${name}\\s*${Number(grams)}g`),`submit page shows ${name} ${grams}g from the 라면 시식 record`);
+  assert(!(await p.locator('.final-notebook').innerText()).includes('시판 스프'),'the submit page never mentions 시판 스프');
   await p.getByLabel('라면 이름',{exact:true}).fill(r.name);await p.getByLabel('한 줄 소개',{exact:true}).fill(r.line);await p.getByLabel('맵기 단계',{exact:true}).selectOption(r.spicy);
   let message='';p.once('dialog',d=>{message=d.message();void d.accept();});
   await p.getByRole('button',{name:'모둠 베스트 레시피 제출',exact:true}).click();
@@ -85,6 +91,9 @@ let debugPage = null;
   assert.equal(await p.getByRole('button',{name:'앞·뒷면 인쇄',exact:true}).count(),1);
   const saved = await serverProject(p,x=>x.notebook?.final?.shared===true&&x.notebook.final.productName===r.name,`group ${r.group} submission`);
   assert.equal(saved.notebook.final.method,'base');assert.equal(saved.notebook.final.tasteLine,r.line);assert.equal(saved.notebook.final.spicyLevel,Number(r.spicy));
+  assert.equal(saved.notebook.final.record.id,saved.notebook.base.tasting.id,'the submission is the 기본 베이스 라면 시식 record');
+  assert.equal(saved.notebook.final.record.note,r.note);
+  assert.deepEqual(saved.notebook.commercial,{practices:[],tastingHistory:[]},'a new record has no 시판 스프 part');
   assert.deepEqual(saved.notebook.final.record.items.map(x=>[x.name,x.amount]).sort(),r.items.map(([n,g])=>[n,Number(g)]).sort());
   assert.equal(saved.notebook.comparisons[GROUP_KEY],String(r.group));
   if(shotName){await noOverflow(p,'submit page');await shot(p,shotName);}
@@ -151,6 +160,7 @@ let debugPage = null;
   assert(text.includes('물 110ml')&&text.includes('면 0.25개')&&text.includes('조리 3분'),`card ${l} shows water/noodle/minutes`);
   assert(text.includes('맛보기 전에 확인해요'),`card ${l} shows the allergen notice`);
   assert(!/\d+\s*모둠/.test(text),`card ${l} must not show a group`);
+  assert(!text.includes('기본 베이스')&&!text.includes('시판 스프'),`card ${l} carries no method chip`);
  }
  assert.equal(await teacher.locator('.gb-reveal').count(),0);
  panelText = await teacher.locator('.gb-panel').innerText();
