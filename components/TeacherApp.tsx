@@ -15,6 +15,7 @@ import {
   ToppingPanel,
 } from "./teacher/TeacherPanels";
 import { ClassPanel } from "./teacher/ClassPanel";
+import { ComparisonSoupPanel } from "./teacher/ComparisonSoupPanel";
 import { StudentRecipesPanel } from "./teacher/StudentRecipesPanel";
 import { CareerProcessPanel } from "./teacher/CareerProcessPanel";
 import { GroupBestPanel, type LessonPatch } from "./teacher/GroupBestPanel";
@@ -27,6 +28,7 @@ type TeacherSection =
   | "career"
   | "lesson"
   | "ingredients"
+  | "soups"
   | "toppings"
   | "noodle"
   | "tasting"
@@ -48,7 +50,8 @@ const NAV_GROUPS: { title: string; items: { id: TeacherSection; label: string }[
     { id: "lesson", label: "2차시 수업지도안" },
   ] },
   { title: "재료 관리", items: [
-    { id: "ingredients", label: "스프 재료 관리" },
+    { id: "ingredients", label: "스프·첨가물 관리" },
+    { id: "soups", label: "시판 스프 관리" },
     { id: "toppings", label: "건더기 관리" },
     { id: "noodle", label: "사리면 설정" },
     { id: "tasting", label: "시식컵 설정" },
@@ -324,6 +327,7 @@ export default function TeacherApp() {
         {section === "career" && <CareerProcessPanel />}
         {section === "lesson" && <LessonPanel settings={settings} />}
         {section === "ingredients" && <IngredientPanel settings={settings} setSettings={setSettings} uploadImage={uploadImage} />}
+        {section === "soups" && <ComparisonSoupPanel settings={settings} setSettings={setSettings} />}
         {section === "toppings" && <ToppingPanel settings={settings} setSettings={setSettings} uploadImage={uploadImage} />}
         {supplyCategory && <SupplyPanel settings={settings} setSettings={setSettings} category={supplyCategory} />}
         {section === "cost" && <CostPanel settings={settings} />}

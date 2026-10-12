@@ -28,6 +28,24 @@ function moveItem<T extends { id: string; order: number }>(items: T[], id: strin
   return ordered.map((item, itemIndex) => ({ ...item, order: itemIndex + 1 }));
 }
 
+const BASE_CATEGORY = "BASE";
+const ADDITIVE_PRESETS = ["향", "단맛", "매운맛", "짠맛", "SPECIAL", "기타"];
+export const categoryLabel = (category: string) => category === BASE_CATEGORY ? "기본 스프" : category === "SPECIAL" ? "특별 (치즈·카레 등)" : category || "기타";
+const isBase = (item: Ingredient) => item.category === BASE_CATEGORY;
+
+/** Swaps an item with its neighbour inside the same section (기본 스프 or 첨가물), then renumbers. */
+function moveWithin(items: Ingredient[], id: string, direction: -1 | 1) {
+  const ordered = [...items].sort((a, b) => a.order - b.order);
+  const item = ordered.find((x) => x.id === id);
+  if (!item) return items;
+  const section = ordered.filter((x) => isBase(x) === isBase(item));
+  const neighbour = section[section.indexOf(item) + direction];
+  if (!neighbour) return items;
+  const a = ordered.indexOf(item), b = ordered.indexOf(neighbour);
+  [ordered[a], ordered[b]] = [ordered[b], ordered[a]];
+  return ordered.map((x, index) => ({ ...x, order: index + 1 }));
+}
+
 export function IngredientPanel({
   settings,
   setSettings,
@@ -37,78 +55,99 @@ export function IngredientPanel({
   setSettings: SettingsSetter;
   uploadImage: (file: File) => Promise<string>;
 }) {
+  const [newName, setNewName] = useState("");
+  const [newCategory, setNewCategory] = useState("향");
+  const [open, setOpen] = useState<string | null>(null);
+  const [added, setAdded] = useState("");
+  const categories = Array.from(new Set([...ADDITIVE_PRESETS, ...settings.ingredients.map((x) => x.category).filter((x) => x && x !== BASE_CATEGORY)]));
   function update(id: string, change: Partial<Ingredient>) {
     setSettings({
       ...settings,
       ingredients: settings.ingredients.map((item) => item.id === id ? { ...item, ...change } : item),
     });
   }
-  function add() {
-    const order = settings.ingredients.length + 1;
+  function add(event: React.FormEvent) {
+    event.preventDefault();
+    const name = newName.trim();
+    if (!name) return;
+    const id = createId("ingredient");
+    const order = Math.max(0, ...settings.ingredients.map((x) => x.order)) + 1;
     setSettings({
       ...settings,
       ingredients: [...settings.ingredients, {
-        id: createId("ingredient"),
-        name: "새 시즈닝",
-        displayName: "새로운 맛",
-        category: "기타",
-        imageUrl: "",
-        defaultAmount: 0,
-        minAmount: 0,
-        maxAmount: 20,
-        step: 0.1,
-        purchasePrice: 0,
-        purchaseWeight: 100,
-        allergen: "",
-        enabled: true,
-        order,
+        id, name, displayName: name, category: newCategory, imageUrl: "",
+        defaultAmount: 0, minAmount: 0, maxAmount: 20, step: 0.1, purchasePrice: 0, purchaseWeight: 100,
+        allergen: "", allergens: [], allergenChecked: false, allergenOther: "", facilityNote: "", enabled: true, order,
       }],
     });
+    setNewName("");
+    setAdded(id);
   }
-  function remove(id: string) {
-    if (!window.confirm("이 스프 재료를 학생 선택 목록에서 삭제할까요? 이미 저장한 레시피는 남습니다.")) return;
-    setSettings({ ...settings, ingredients: settings.ingredients.filter((item) => item.id !== id) });
+  function remove(item: Ingredient) {
+    if (!window.confirm(`'${item.displayName || item.name}'을(를) 삭제할까요?\n학생 선택 목록에서 빠지고, 이미 저장한 학생 레시피는 그대로 남아요.\n잠깐만 안 쓰려면 삭제 대신 '학생 표시'를 꺼 주세요.`)) return;
+    setSettings({ ...settings, ingredients: settings.ingredients.filter((x) => x.id !== item.id) });
+    if (open === item.id) setOpen(null);
   }
-  return (
-    <TeacherPanelHeading eyebrow="INGREDIENTS" title="스프 재료 관리" description="이 목록이 학생 LAB·비교표·라벨·원가표에 그대로 반영됩니다." action={<button className="teacher-primary" onClick={add}>＋ 재료 추가</button>}>
-      <div className="teacher-list ingredient-admin-list">
-        {[...settings.ingredients].sort((a, b) => a.order - b.order).map((item, index) => (
-          <article className={`admin-item ${item.enabled ? "" : "disabled-item"}`} key={item.id}>
-            <div className="admin-item-head">
-              <label className="image-upload">
-                {item.imageUrl ? <img src={item.imageUrl} alt="" /> : <span>사진<br />없음</span>}
-                <input type="file" accept="image/png,image/jpeg,image/webp" onChange={async (event) => {
-                  const file = event.target.files?.[0];
-                  if (!file) return;
-                  const url = await uploadImage(file);
-                  update(item.id, { imageUrl: url });
-                }} />
-              </label>
-              <div><span className="item-order">재료 {String(index + 1).padStart(2, "0")}</span><h3>{item.displayName || "이름 없음"}</h3><p>{item.category || "분류 없음"}</p></div>
-              <div className="admin-actions">
-                <button onClick={() => setSettings({ ...settings, ingredients: moveItem(settings.ingredients, item.id, -1) })} aria-label="위로 이동">↑</button>
-                <button onClick={() => setSettings({ ...settings, ingredients: moveItem(settings.ingredients, item.id, 1) })} aria-label="아래로 이동">↓</button>
-                <label className="switch-label"><input type="checkbox" checked={item.enabled} onChange={(event) => update(item.id, { enabled: event.target.checked })} /><span />학생 표시</label>
-                <button className="danger-text" onClick={() => remove(item.id)}>삭제</button>
-              </div>
-            </div>
-            <div className="admin-form-grid four">
-              <Field label="재료명"><input value={item.name} onChange={(event) => update(item.id, { name: event.target.value })} /></Field>
-              <Field label="학생 표시명"><input value={item.displayName} onChange={(event) => update(item.id, { displayName: event.target.value })} /></Field>
-              <Field label="맛 카테고리"><input value={item.category} onChange={(event) => update(item.id, { category: event.target.value })} /></Field>
-
-              <Field label="기본 투입량 (g)"><input type="number" step="0.1" value={item.defaultAmount} onChange={(event) => update(item.id, { defaultAmount: numeric(event.target.value) })} /></Field>
-              <Field label="최소량 (g)"><input type="number" step="0.1" value={item.minAmount} onChange={(event) => update(item.id, { minAmount: numeric(event.target.value) })} /></Field>
-              <Field label="최대량 (g)"><input type="number" step="0.1" value={item.maxAmount} onChange={(event) => update(item.id, { maxAmount: numeric(event.target.value) })} /></Field>
-              <Field label="조절 단위 (g)"><input type="number" step="0.1" value={item.step} onChange={(event) => update(item.id, { step: Math.max(0.1, numeric(event.target.value)) })} /></Field>
-              <Field label="구입가격 (원)"><input type="number" value={item.purchasePrice} onChange={(event) => update(item.id, { purchasePrice: numeric(event.target.value) })} /></Field>
-              <Field label="구입중량 (g)"><input type="number" value={item.purchaseWeight} onChange={(event) => update(item.id, { purchaseWeight: numeric(event.target.value) })} /></Field>
-              <div className="calculated-field"><span>자동계산</span><strong>{ingredientUnitCost(item.purchasePrice, item.purchaseWeight).toFixed(1)}원/g</strong></div>
-            </div>
-            <AllergenEditor value={item} onChange={(change) => update(item.id, change)} />
-          </article>
-        ))}
+  const ordered = [...settings.ingredients].sort((a, b) => a.order - b.order);
+  const sections = [
+    { title: "기본 스프", note: "학생 '기본 베이스' 탭에서만 보여요. (쇠고기·멸치·사골 분말 등)", items: ordered.filter(isBase) },
+    { title: "첨가물", note: "'기본 베이스'와 '시판 스프' 두 탭 모두에서 보여요.", items: ordered.filter((x) => !isBase(x)) },
+  ];
+  const row = (item: Ingredient, index: number, count: number) => {
+    const expanded = open === item.id;
+    const rename = (displayName: string) => update(item.id, item.name === item.displayName ? { name: displayName, displayName } : { displayName });
+    return <article key={item.id} className={`ing-row${item.enabled ? "" : " off"}${added === item.id ? " new" : ""}`}>
+      <div className="ing-main">
+        <div className="ing-move"><button onClick={() => setSettings({ ...settings, ingredients: moveWithin(settings.ingredients, item.id, -1) })} disabled={index === 0} aria-label={`${item.displayName} 위로`}>↑</button><button onClick={() => setSettings({ ...settings, ingredients: moveWithin(settings.ingredients, item.id, 1) })} disabled={index === count - 1} aria-label={`${item.displayName} 아래로`}>↓</button></div>
+        <label className="ing-name"><span>학생에게 보이는 이름</span><input value={item.displayName} maxLength={40} onChange={(event) => rename(event.target.value)} placeholder="이름을 적어 주세요" /></label>
+        <label className="ing-kind"><span>종류</span><select value={item.category} onChange={(event) => update(item.id, { category: event.target.value })}><option value={BASE_CATEGORY}>{categoryLabel(BASE_CATEGORY)}</option>{[...categories, ...(categories.includes(item.category) || isBase(item) ? [] : [item.category])].map((c) => <option key={c} value={c}>{categoryLabel(c)}</option>)}</select></label>
+        <div className="ing-actions">
+          <label className="switch-label"><input type="checkbox" checked={item.enabled} onChange={(event) => update(item.id, { enabled: event.target.checked })} /><span />학생 표시</label>
+          <button className="ing-more" aria-expanded={expanded} onClick={() => setOpen(expanded ? null : item.id)}>{expanded ? "접기" : "자세히"}</button>
+          <button className="danger-text ing-delete" onClick={() => remove(item)}>삭제</button>
+        </div>
       </div>
+      <p className="ing-status">{item.allergenChecked ? "알레르기 포장 확인 완료" : "알레르기 포장 확인 전"}{item.enabled ? "" : " · 학생 화면에서 숨김"}</p>
+      {expanded && <div className="ing-detail">
+        <div className="admin-item-head">
+          <label className="image-upload">
+            {item.imageUrl ? <img src={item.imageUrl} alt="" /> : <span>사진<br />없음</span>}
+            <input type="file" accept="image/png,image/jpeg,image/webp" onChange={async (event) => {
+              const file = event.target.files?.[0];
+              if (!file) return;
+              const url = await uploadImage(file);
+              update(item.id, { imageUrl: url });
+            }} />
+          </label>
+          <div><span className="item-order">사진 (선택)</span><p>눌러서 재료 사진을 올릴 수 있어요.</p></div>
+        </div>
+        <div className="admin-form-grid four">
+          <Field label="재료명 (구입 상품명)"><input value={item.name} maxLength={60} onChange={(event) => update(item.id, { name: event.target.value })} /></Field>
+          <Field label="기본 투입량 (g)"><input type="number" step="0.1" value={item.defaultAmount} onChange={(event) => update(item.id, { defaultAmount: numeric(event.target.value) })} /></Field>
+          <Field label="최소량 (g)"><input type="number" step="0.1" value={item.minAmount} onChange={(event) => update(item.id, { minAmount: numeric(event.target.value) })} /></Field>
+          <Field label="최대량 (g)"><input type="number" step="0.1" value={item.maxAmount} onChange={(event) => update(item.id, { maxAmount: numeric(event.target.value) })} /></Field>
+          <Field label="조절 단위 (g)"><input type="number" step="0.1" value={item.step} onChange={(event) => update(item.id, { step: Math.max(0.1, numeric(event.target.value)) })} /></Field>
+          <Field label="구입가격 (원)"><input type="number" value={item.purchasePrice} onChange={(event) => update(item.id, { purchasePrice: numeric(event.target.value) })} /></Field>
+          <Field label="구입중량 (g)"><input type="number" value={item.purchaseWeight} onChange={(event) => update(item.id, { purchaseWeight: numeric(event.target.value) })} /></Field>
+          <div className="calculated-field"><span>자동계산</span><strong>{ingredientUnitCost(item.purchasePrice, item.purchaseWeight).toFixed(1)}원/g</strong></div>
+        </div>
+        <AllergenEditor value={item} onChange={(change) => update(item.id, change)} />
+      </div>}
+    </article>;
+  };
+  return (
+    <TeacherPanelHeading eyebrow="SOUP · ADDITIVES" title="스프·첨가물 관리" description="학생 레시피 기록에 나오는 재료예요. 추가·삭제한 뒤 위의 '설정 저장'을 눌러야 학생 화면에 반영돼요.">
+      <form className="ing-add" onSubmit={add}>
+        <strong>새 재료 추가</strong>
+        <label><span>이름</span><input value={newName} maxLength={40} onChange={(event) => setNewName(event.target.value)} placeholder="예: 다시마분말, 간장분말" /></label>
+        <label><span>종류</span><select value={newCategory} onChange={(event) => setNewCategory(event.target.value)}><option value={BASE_CATEGORY}>{categoryLabel(BASE_CATEGORY)}</option>{categories.map((c) => <option key={c} value={c}>{categoryLabel(c)}</option>)}</select></label>
+        <button className="teacher-primary" disabled={!newName.trim()}>＋ 추가</button>
+      </form>
+      {added && settings.ingredients.some((x) => x.id === added) && <p className="ing-added" role="status">추가했어요. 위의 &apos;설정 저장&apos;을 눌러 주세요. 알레르기는 &apos;자세히&apos;에서 포장을 보고 체크해 주세요.</p>}
+      {sections.map((section) => <section className="ing-section" key={section.title}>
+        <header><h2>{section.title} <small>{section.items.length}개</small></h2><p>{section.note}</p></header>
+        {section.items.length ? section.items.map((item, index) => row(item, index, section.items.length)) : <p className="empty-record">아직 없어요. 위에서 추가해 주세요.</p>}
+      </section>)}
     </TeacherPanelHeading>
   );
 }
