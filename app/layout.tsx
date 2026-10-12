@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 import "./group-student.css";
 import "./group-teacher.css";
+import "./teacher-ingredients.css";
+import "./admin.css";
 
 export const metadata: Metadata = {
   title: "라면 R&D 연구소",
