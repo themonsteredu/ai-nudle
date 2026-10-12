@@ -338,12 +338,15 @@ const soft = (ok,message) => { if(!ok){warnings.push(message);console.warn('WARN
   await nav(p,'레시피 기록').click();await p.getByRole('button',{name:'라면 기록 쓰기',exact:true}).click();
   await p.getByLabel(`${enabled[group-1]} 양(g)`,{exact:true}).fill(grams);await p.getByLabel('맛 느낌 한 줄',{exact:true}).fill(`검증 노트 ${group}`);
   await nav(p,'모둠 베스트 제출').click();await p.getByText('미제출',{exact:true}).waitFor();
-  await p.getByLabel('제출할 라면 기록',{exact:true}).selectOption('base');
+  // The class uses the 기본 베이스 only: no record picker, the 라면 시식 record is submitted.
+  assert.equal(await p.getByLabel('제출할 라면 기록',{exact:true}).count(),0,'no 제출할 라면 기록 picker');
   await p.getByLabel('라면 이름',{exact:true}).fill(`검증 라면 ${group}`);await p.getByLabel('한 줄 소개',{exact:true}).fill(`검증 소개 ${group}`);await p.getByLabel('맵기 단계',{exact:true}).selectOption('1');
   p.once('dialog',d=>void d.accept());
   await p.getByRole('button',{name:'모둠 베스트 레시피 제출',exact:true}).click();
   await p.locator('.gb-sub-status.done').getByText('제출 완료',{exact:true}).waitFor();
-  return serverProject(p,x=>x.notebook?.final?.shared===true,`group ${group} submission`);
+  const saved = await serverProject(p,x=>x.notebook?.final?.shared===true,`group ${group} submission`);
+  assert.equal(saved.notebook.final.method,'base');assert.equal(saved.notebook.final.record.id,saved.notebook.base.tasting.id,'the 기본 베이스 라면 시식 record is submitted');
+  return saved;
  }
  await submitGroup(1,'1.2');await submitGroup(2,'0.9');
  const t3 = await newPage('teacher3');debugPage = t3;

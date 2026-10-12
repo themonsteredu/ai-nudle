@@ -14,7 +14,6 @@ import {
   ToppingPanel,
 } from "./teacher/TeacherPanels";
 import { ClassPanel } from "./teacher/ClassPanel";
-import { ComparisonSoupPanel } from "./teacher/ComparisonSoupPanel";
 import { StudentRecipesPanel } from "./teacher/StudentRecipesPanel";
 import { CareerProcessPanel } from "./teacher/CareerProcessPanel";
 import { GroupBestPanel, type LessonPatch } from "./teacher/GroupBestPanel";
@@ -27,7 +26,6 @@ type TeacherSection =
   | "career"
   | "lesson"
   | "ingredients"
-  | "soups"
   | "toppings"
   | "checklist"
   | "labels"
@@ -44,7 +42,6 @@ const NAV_GROUPS: { title: string; items: { id: TeacherSection; label: string }[
   ] },
   { title: "재료 관리", items: [
     { id: "ingredients", label: "스프·첨가물 관리" },
-    { id: "soups", label: "시판 스프 관리" },
     { id: "toppings", label: "건더기 관리" },
   ] },
   { title: "출력", items: [
@@ -303,7 +300,7 @@ export default function TeacherApp() {
           <div className="save-area">{dirty && <i>저장하지 않은 변경</i>}<button onClick={saveAll} disabled={!dirty || saving}>{saving ? "저장 중" : "설정 저장"}</button></div>
         </header>
 
-        {section === "classes" && <ClassPanel settings={settings} setSettings={setSettings} classId={classId} selectClass={(id) => { setProjects([]); setClassId(id); }} openSoups={() => { setSection("soups"); window.scrollTo({ top: 0 }); }} />}
+        {section === "classes" && <ClassPanel settings={settings} setSettings={setSettings} classId={classId} selectClass={(id) => { setProjects([]); setClassId(id); }} />}
         {section === "groups" && <GroupBestPanel key={classId} settings={settings} classId={classId} projects={visibleProjects} commit={(patch, message) => commitLesson(classId, patch, message)} busy={saving} refresh={refreshStudents} loading={studentsLoading} error={studentsError} />}
         {section === "recipes" && <StudentRecipesPanel key={classId} projects={visibleProjects} settings={settings} classId={classId} refresh={refreshStudents} loading={studentsLoading} error={studentsError} />}
         {section === "overview" && (
@@ -318,7 +315,6 @@ export default function TeacherApp() {
         {section === "career" && <CareerProcessPanel />}
         {section === "lesson" && <LessonPanel settings={settings} />}
         {section === "ingredients" && <IngredientPanel settings={settings} setSettings={setSettings} uploadImage={uploadImage} />}
-        {section === "soups" && <ComparisonSoupPanel settings={settings} setSettings={setSettings} />}
         {section === "toppings" && <ToppingPanel settings={settings} setSettings={setSettings} uploadImage={uploadImage} />}
         {section === "checklist" && <ChecklistPanel settings={settings} />}
         {section === "labels" && <LabelsPanel settings={settings} projects={visibleProjects} />}
@@ -352,13 +348,13 @@ function OverviewPanel({
       <header className="teacher-panel-head"><div><span>CLASS CONTROL</span><h1>수업 개요</h1><p>수업 인원과 안전 확인부터 먼저 준비하세요.</p></div></header>
       <div className="overview-strip">
         <label><span>학생 수</span><div><input type="number" min="1" max="300" value={settings.studentCount} onChange={(event) => setSettings({ ...settings, studentCount: Math.max(1, Number(event.target.value)) })} /><b>명</b></div></label>
-        <label><span>라면 시식 횟수</span><div><input value={2} readOnly /><b>회</b></div></label>
+        <label><span>라면 시식 (개인)</span><div><input value={1} readOnly /><b>회</b></div></label>
         <label><span>시식용 면</span><div><input type="number" min="0.1" max="1" step="0.05" value={settings.tastingNoodleFraction} onChange={(event) => setSettings({ ...settings, tastingNoodleFraction: Number(event.target.value) })} /><b>개/회</b></div></label>
         <div><span>학생 기록</span><strong>{projects.length}</strong><small>라벨 완성 {labels}</small></div>
       </div>
       <div className="overview-columns">
         <section className="lesson-flow"><div><span>1차시</span><strong>기본 베이스로 맛 연구</strong></div><ol><li><b>01</b>식품개발연구원 이해</li><li><b>02</b>라면 제조공정</li><li><b>03</b>스프·건더기 역할</li><li><b>04</b>기본 베이스 국물 연습</li><li><b>05</b>라면사리 시식 1회</li></ol></section>
-        <section className="lesson-flow orange"><div><span>2차시</span><strong>시판 스프를 나만의 맛으로</strong></div><ol><li><b>06</b>시판 스프 국물 연습</li><li><b>07</b>라면사리 시식 1회</li><li><b>08</b>내 레시피 선택</li><li><b>09</b>최종 스프·라벨</li><li><b>10</b>실제 제품 포장</li></ol></section>
+        <section className="lesson-flow orange"><div><span>2차시</span><strong>모둠 베스트로 블라인드 테스트</strong></div><ol><li><b>06</b>모둠 베스트 레시피 정하기</li><li><b>07</b>모둠 베스트 제출</li><li><b>08</b>블라인드 시식·투표</li><li><b>09</b>결과·모둠 공개</li><li><b>10</b>라벨·실제 제품 포장</li></ol></section>
       </div>
       <section className="safety-board">
         <header><div><span>SAFETY FIRST</span><h2>알레르기·안전 확인</h2></div><p>포장 확인된 알레르기: <strong>{allergens.join(", ") || "확인된 항목 없음 · 재료 관리에서 포장을 확인해 주세요"}</strong></p></header>
@@ -377,17 +373,17 @@ function LessonPanel({ settings }: { settings: AppSettings }) {
     ["라면 시식", "고른 레시피로 라면사리 시식 1회", "20분"],
   ];
   const lesson2 = [
-    ["국물 연습", "시판 스프에 추가 재료 → 맛 기록", "15분"],
-    ["라면 시식", "고른 레시피로 라면사리 시식 1회", "15분"],
-    ["기록", "내 레시피와 맛 느낌 돌아보기", "10분"],
-    ["선정", "마음에 드는 레시피 선택과 최종 계량", "20분"],
-    ["제품", "라벨 제작·출력·실제 포장", "20분"],
+    ["모둠 선정", "모둠 친구들의 레시피를 비교해 모둠 베스트 정하기", "15분"],
+    ["제출", "모둠 베스트 레시피 제출 · 교사가 블라인드 컵 준비", "10분"],
+    ["블라인드 시식", "레시피 A·B·C…를 맛보고 투표", "20분"],
+    ["결과", "투표 결과 확인 · 모둠 공개 · 소감 나누기", "10분"],
+    ["제품", "라벨 제작·출력·실제 포장", "25분"],
   ];
   return (
     <section className="teacher-panel">
       <header className="teacher-panel-head"><div><span>LESSON PLAN</span><h1>2차시 수업지도안</h1><p>{settings.studentCount}명 기준 · 시간은 학교 수업에 맞게 조정</p></div><button className="teacher-primary" onClick={() => window.print()}>인쇄 / PDF</button></header>
       <div className="lesson-plan print-target">
-        {[{ title: "1차시", subtitle: "연구원이 되어 첫 시제품 만들기", rows: lesson1 }, { title: "2차시", subtitle: "최종 제품을 결정하고 포장하기", rows: lesson2 }].map((lesson) => <section key={lesson.title}><header><span>{lesson.title}</span><h2>{lesson.subtitle}</h2></header><table><tbody>{lesson.rows.map((row, index) => <tr key={row[0]}><td>{String(index + 1).padStart(2, "0")}</td><th>{row[0]}</th><td>{row[1]}</td><td>{row[2]}</td></tr>)}</tbody></table></section>)}
+        {[{ title: "1차시", subtitle: "연구원이 되어 첫 시제품 만들기", rows: lesson1 }, { title: "2차시", subtitle: "모둠 베스트로 블라인드 테스트 · 포장하기", rows: lesson2 }].map((lesson) => <section key={lesson.title}><header><span>{lesson.title}</span><h2>{lesson.subtitle}</h2></header><table><tbody>{lesson.rows.map((row, index) => <tr key={row[0]}><td>{String(index + 1).padStart(2, "0")}</td><th>{row[0]}</th><td>{row[1]}</td><td>{row[2]}</td></tr>)}</tbody></table></section>)}
         <div className="lesson-note"><strong>수업 핵심</strong><p>웹앱은 맛을 채점하지 않습니다. 학생이 실제로 먹고 판단한 결과를 다음 배합에 반영하게 합니다.</p></div>
       </div>
     </section>

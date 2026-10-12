@@ -99,11 +99,13 @@ function TopicDiagram({ type }: { type: CareerSlide["visual"] }) {
       <div className="career-study-path"><span>관련 전공의 예</span><p>식품공학 · 식품영양학 · 생명과학 등</p></div>
     </div>;
     case "methods": return <div className="career-methods">
-      <div className="career-diagram-heading"><span>오늘의 두 가지 연구</span><strong>각 방법에서 라면 시식 한 번씩</strong></div>
+      <div className="career-diagram-heading"><span>오늘의 연구 흐름</span><strong>내 레시피에서 모둠 베스트로</strong></div>
       <div className="career-method-columns">{[
-        ["01", "기본 베이스", "베이스와 추가 재료로 맛의 바탕부터 만들어요."],
-        ["02", "시판 스프", "완성된 스프에 추가 재료로 변화를 줘요."],
-      ].map(([number, title, detail]) => <section key={title}><span>{number}</span><h3>{title}</h3><p>{detail}</p><ol><li>국물 연습<small>필요할 때 기록 추가</small></li><li>레시피 선택<small>기록을 복사해 사용</small></li><li>라면 시식 1회<small>재료 g + 맛 느낌 한 줄</small></li></ol></section>)}</div>
+        { period: "1차시", title: "기본 베이스 연구", detail: "베이스와 추가 재료로 맛의 바탕부터 만들어요.", steps: [
+          ["국물 연습", "필요할 때 기록 추가"], ["레시피 선택", "기록을 복사해 사용"], ["라면 시식 1회", "재료 g + 맛 느낌 한 줄"]] },
+        { period: "2차시", title: "블라인드 테스트", detail: "모둠 베스트를 이름 없이 맛보고 함께 평가해요.", steps: [
+          ["모둠 베스트 제출", "모둠 친구들의 기록 비교"], ["블라인드 시식·투표", "레시피 A·B·C…로만 보기"], ["결과·모둠 공개", "라벨과 포장으로 마무리"]] },
+      ].map(({ period, title, detail, steps }) => <section key={title}><span>{period}</span><h3>{title}</h3><p>{detail}</p><ol>{steps.map(([step, note]) => <li key={step}>{step}<small>{note}</small></li>)}</ol></section>)}</div>
     </div>;
     default: return null;
   }

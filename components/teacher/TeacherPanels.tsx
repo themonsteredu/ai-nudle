@@ -116,8 +116,8 @@ export function IngredientPanel({
   const ordered = baseFirst(settings.ingredients);
   const addedItem = ordered.find((x) => x.id === added);
   const sections = [
-    { title: "기본 스프", note: "학생 '기본 베이스' 탭에서만 보여요. (쇠고기·멸치·사골 분말 등)", items: ordered.filter(isBase) },
-    { title: "첨가물", note: "'기본 베이스'와 '시판 스프' 두 탭 모두에서 보여요.", items: ordered.filter((x) => !isBase(x)) },
+    { title: "기본 스프", note: "국물의 기본이 되는 분말이에요. (쇠고기·멸치·사골 분말 등)", items: ordered.filter(isBase) },
+    { title: "첨가물", note: "기본 스프에 더해 맛을 바꾸는 재료예요.", items: ordered.filter((x) => !isBase(x)) },
   ];
   const kindOptions = (current: string) => <>
     <option value={BASE_CATEGORY}>{categoryLabel(BASE_CATEGORY)}</option>
@@ -236,7 +236,7 @@ export function ToppingPanel({
 
 const SUPPLY_TITLES: Record<SupplyCategory, [string, string, string]> = {
   noodle: ["NOODLES", "사리면 설정", "기본값은 시식용 1개와 최종 제품용 1개, 학생 1명당 총 2개입니다."],
-  tasting: ["TASTING CUPS", "시식컵 설정", "국물 연습과 두 번의 라면 시식에 맞게 준비 수량을 입력하세요."],
+  tasting: ["TASTING CUPS", "시식컵 설정", "국물 연습, 라면 시식, 블라인드 시식에 맞게 준비 수량을 입력하세요."],
   container: ["FINAL CONTAINER", "최종 용기 설정", "학생이 집으로 가져갈 무지 라면용기 수량을 관리합니다."],
   consumable: ["CONSUMABLES", "기타 소모품", "소분팩·라벨지처럼 학생 수에 따라 늘어나는 항목입니다."],
   tool: ["TOOLS", "수업도구", "계량스푼처럼 고정 수량으로 준비하는 도구도 등록할 수 있습니다."],
@@ -300,7 +300,7 @@ export function ChecklistPanel({ settings }: { settings: AppSettings }) {
   return (
     <TeacherPanelHeading eyebrow="PREPARATION" title="준비물 자동 목록" description={`${settings.studentCount}명 기준으로 현재 사용 중인 항목만 표시합니다.`} action={<button className="teacher-primary" onClick={() => window.print()}>인쇄 / PDF</button>}>
       <div className="checklist-sheet print-target">
-        <div className="print-title"><span>라면 R&amp;D 연구소</span><h1>준비물 체크리스트</h1><p>{settings.studentCount}명 · 라면 시식 2회 · 국물 연습 자유</p></div>
+        <div className="print-title"><span>라면 R&amp;D 연구소</span><h1>준비물 체크리스트</h1><p>{settings.studentCount}명 · 라면 시식 · 블라인드 시식 · 국물 연습 자유</p></div>
         <div className="checklist-columns">
           {groups.map((group) => <section key={group}><h2>{group}</h2>{summary.rows.filter((row) => row.category === group).map((row) => <label key={row.id}><input type="checkbox" /><span>{row.name}</span><strong>{roundQuantity(row.needed)}{row.unit}</strong></label>)}</section>)}
         </div>
@@ -354,7 +354,7 @@ export function CostPrintPanel({ settings }: { settings: AppSettings }) {
 function PrintDocument({ type, settings }: { type: "guide" | "checklist" | "cost" | "record"; settings: AppSettings }) {
   const costs = calculateCosts(settings);
   const ingredients = settings.ingredients.filter((item) => item.enabled).sort((a, b) => a.order - b.order);
-  if (type === "guide") return <div className="print-document print-target"><PrintHead title="라면 R&D 수업지도안" settings={settings} /><h2>수업 목표</h2><p>학생이 식품개발연구원의 역할을 이해하고, 국물 배합 연습과 두 번의 라면 시식을 통해 자신이 만족하는 제품을 완성한다.</p><div className="lesson-print-grid"><section><h2>1차시</h2><ol><li>직업 이해</li><li>라면 제조공정</li><li>스프·건더기 역할</li><li>기본 베이스 국물 연습</li><li>라면사리 시식 1회</li></ol></section><section><h2>2차시</h2><ol><li>시판 스프 국물 연습</li><li>라면사리 시식 1회</li><li>마음에 드는 레시피 선택</li><li>최종 스프·라벨</li><li>실제 제품 포장</li></ol></section></div><h2>안전 확인</h2>{settings.safetyChecks.map((item) => <p className="print-check" key={item}>□ {item}</p>)}</div>;
+  if (type === "guide") return <div className="print-document print-target"><PrintHead title="라면 R&D 수업지도안" settings={settings} /><h2>수업 목표</h2><p>학생이 식품개발연구원의 역할을 이해하고, 기본 베이스 국물 배합 연습과 라면 시식을 거쳐 모둠 베스트 레시피를 만들고, 블라인드 시식으로 평가한다.</p><div className="lesson-print-grid"><section><h2>1차시</h2><ol><li>직업 이해</li><li>라면 제조공정</li><li>스프·건더기 역할</li><li>기본 베이스 국물 연습</li><li>라면사리 시식 1회</li></ol></section><section><h2>2차시</h2><ol><li>모둠 베스트 레시피 정하기</li><li>모둠 베스트 제출</li><li>블라인드 시식·투표</li><li>결과·모둠 공개</li><li>라벨·실제 제품 포장</li></ol></section></div><h2>안전 확인</h2>{settings.safetyChecks.map((item) => <p className="print-check" key={item}>□ {item}</p>)}</div>;
   if (type === "checklist") return <div className="print-document print-target"><PrintHead title="준비물 체크리스트" settings={settings} />{(["식재료", "용기·소모품", "수업도구"] as const).map((group) => <section key={group}><h2>{group}</h2>{costs.rows.filter((row) => row.category === group).map((row) => <p className="print-check" key={row.id}>□ {row.name} <strong>{roundQuantity(row.needed)}{row.unit}</strong></p>)}</section>)}</div>;
   if (type === "cost") return <div className="print-document print-target"><PrintHead title="원가계산표" settings={settings} /><div className="print-cost-summary"><span>1인 {won(costs.perStudentCost)}</span><span>사용원가 {won(costs.usedCost)}</span><span>준비비용 {won(costs.purchaseCost)}</span></div><CostTable settings={settings} count={settings.studentCount} printable /></div>;
   return <div className="print-document print-target"><PrintHead title="학생용 실험 기록지" settings={settings} /><p>연구원명 ____________________　개발팀 ____________________</p><table className="print-record-table"><thead><tr><th>재료</th>{Array.from({ length: settings.testCount }, (_, index) => <th key={index}>R-{String(index + 1).padStart(2, "0")}</th>)}</tr></thead><tbody>{ingredients.map((item) => <tr key={item.id}><th>{item.displayName}</th>{Array.from({ length: settings.testCount }, (_, index) => <td key={index}>　　　 g</td>)}</tr>)}<tr><th>시식 메모</th>{Array.from({ length: settings.testCount }, (_, index) => <td key={index} className="memo-cell" />)}</tr></tbody></table><h2>BEST RECIPE</h2><p>선택: R-　　　제품명: ______________________________</p></div>;
