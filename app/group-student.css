@@ -92,3 +92,4 @@
   .gb-sub-status > button { width:100%; }
 }
 @media (prefers-reduced-motion: reduce) { .gb-pick-grid button, .gb-ballot-grid button { transition:none; } }
+.gb-mygroup-button { border:0; cursor:pointer; min-height:36px; font-family:inherit; }

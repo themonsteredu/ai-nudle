@@ -25,7 +25,7 @@ export function FinalRecipe({ project, settings, group, round, patch, refresh, o
   // A recipe that went into the blind round stays as it is until the teacher resets the round, so the board never changes.
   const locked = inRound(round, project.id);
   const testing = round?.status === "voting" || round?.status === "closed";
-  const needRecord = !record ? "라면 시식 기록을 먼저 써 주세요." : !record.items.some((x) => x.amount > 0) ? "라면 시식 기록에 재료 양을 먼저 적어 주세요." : "";
+  const needRecord = !record ? "레시피 기록을 먼저 써 주세요." : !record.items.some((x) => x.amount > 0) ? "레시피 기록에 재료 양을 먼저 적어 주세요." : "";
   const missing = needRecord || (name.trim() ? "" : "라면 이름을 지어 주세요.");
   // Keywords come from the 기본 베이스 notes only (the submitted tasting first); an older 시판 스프 part stays hidden.
   const words = Array.from(new Set([record, ...(project.notebook?.base.practices ?? [])].flatMap((x) => x?.note.split(/[\s,.!?·，。]+/).filter((w) => w.length > 1 && w.length <= 20) ?? []))).slice(0, 40);
@@ -67,7 +67,7 @@ export function FinalRecipe({ project, settings, group, round, patch, refresh, o
       <div className="label-fields"><label><span>라면 이름</span><input maxLength={24} value={name} onChange={(e) => setName(e.target.value)} placeholder="우리 모둠 라면에 이름을 지어 주세요" /></label><label><span>한 줄 소개</span><input maxLength={60} value={line} onChange={(e) => setLine(e.target.value)} placeholder="예: 매콤하고 고소한 국물" /></label><label><span>맵기 단계</span><select aria-label="맵기 단계" value={level} onChange={(e) => setLevel(Number(e.target.value))}>{[0,1,2,3].map((n) => <option key={n} value={n}>{n}단계</option>)}</select></label></div>
       <div className="taste-keywords"><strong>기록에서 맛 키워드 고르기 (최대 3개, 선택)</strong><div>{words.map((w) => <button className={keywords.includes(w) ? "active" : ""} key={w} onClick={() => setKeywords(keywords.includes(w) ? keywords.filter((x) => x !== w) : keywords.length < 3 ? [...keywords, w] : keywords)}>{w}</button>)}</div>{!words.length && <p>맛 느낌을 적으면 여기에서 고를 수 있어요.</p>}</div>
     </fieldset>
-    <RecipeReadout record={record} settings={settings} noodles title="제출할 라면 시식 기록" />
+    <RecipeReadout record={record} settings={settings} noodles title="제출할 내 레시피" />
     {!locked && missing && ((submitted && !old) || !needRecord) && <p className="gb-sub-note strong">제출하려면 {missing}</p>}
     {submitted && changed && !locked && !missing && <p className="gb-sub-note strong">바뀐 내용이 있어요. &lsquo;다시 제출하기&rsquo;를 눌러야 반영돼요.</p>}
     <div className="record-actions gb-sub-actions"><button className={submitted && !changed ? undefined : "gb-sub-submit"} onClick={() => void save(true)} disabled={Boolean(missing) || locked || checking}>{submitted ? "다시 제출하기" : "모둠 베스트 레시피 제출"}</button>{!submitted && <button onClick={() => void save(false)} disabled={!record || locked || checking}>제출하지 않고 저장만</button>}</div>
