@@ -59,7 +59,8 @@ export default function StudentApp() {
       {round?.status === "voting" && section !== "vote" && <button className="gb-vote-banner" onClick={() => setSection("vote")}><span>블라인드 투표 중</span><strong>{myVote ? `내 선택: 레시피 ${myVote}` : "가장 맛있었던 레시피를 골라 주세요"}</strong><em>{myVote ? "바꾸러 가기" : "투표하러 가기"}</em></button>}
       {section === "record" && <><div className="page-heading"><div><span className="eyebrow">MY RECIPE</span><h1>내 레시피 기록</h1></div></div>
       <p className="lesson-settings">선생님 설정 · 물 {lesson.waterMl}ml · 라면사리 {lesson.noodleFraction}개 · 기다리는 시간 {lesson.cookMinutes}분</p>
-      <SingleRecord key={data.tasting?.id ?? "new"} record={data.tasting} lesson={lesson} settings={settings} onChange={changeRecord} />
+      {/* Keep the editor mounted when the draft becomes a saved recipe on the first keystroke. */}
+      <SingleRecord key={project.id} record={data.tasting} lesson={lesson} settings={settings} onChange={changeRecord} />
       <div className="record-actions"><button className="filled" onClick={() => setSection("label")}>다 적었으면 모둠 베스트 제출하러 가기</button></div>
       {data.practices.length > 0 && <details className="practice-history"><summary>이전 연습 기록 보기 ({data.practices.length})</summary>{data.practices.map((r,i) => <div key={r.id}><RecipeReadout record={r} settings={settings} title={`연습 ${i+1}`} /><div className="record-actions"><button onClick={() => copy(r)}>이 레시피 가져오기</button></div></div>)}</details>}
       {data.tastingHistory.length > 0 && <details className="practice-history"><summary>이전 라면 기록 보기 ({data.tastingHistory.length})</summary>{data.tastingHistory.map((r,i) => <RecipeReadout key={`${r.id}-${i}`} record={r} settings={settings} noodles title={`이전 기록 ${i+1}`} />)}</details>}
