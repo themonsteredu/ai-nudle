@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useEffect, useRef } from "react";
-export function Fullscreen({ title, close, previous, next, children }: { title: string; close: () => void; previous?: () => void; next?: () => void; children: React.ReactNode }) {
+export function Fullscreen({ title, close, previous, next, children, className = "" }: { title: string; close: () => void; previous?: () => void; next?: () => void; children: React.ReactNode; className?: string }) {
   const root = useRef<HTMLDivElement>(null);
   const touch = useRef<{x:number;y:number} | null>(null);
   const closeRef = useRef(close); const prevRef = useRef(previous); const nextRef = useRef(next);
@@ -23,8 +23,8 @@ export function Fullscreen({ title, close, previous, next, children }: { title: 
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") { e.preventDefault(); dismiss(); return; }
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLSelectElement) return;
-      if (e.key === "ArrowLeft") { e.preventDefault(); prevRef.current?.(); }
-      if (e.key === "ArrowRight") { e.preventDefault(); nextRef.current?.(); }
+      if (e.key === "ArrowLeft" && prevRef.current) { e.preventDefault(); prevRef.current(); }
+      if (e.key === "ArrowRight" && nextRef.current) { e.preventDefault(); nextRef.current(); }
       if (e.key === "Tab" && element) {
         const list = Array.from(element.querySelectorAll<HTMLElement>('button:not(:disabled), a[href], input, select, textarea, summary, iframe, [tabindex="0"]')).filter((x) => x.offsetParent !== null);
         if (!list.length) { e.preventDefault(); element.focus(); }
@@ -35,5 +35,5 @@ export function Fullscreen({ title, close, previous, next, children }: { title: 
     window.addEventListener("keydown", onKey);
     return () => { window.removeEventListener("keydown", onKey); document.removeEventListener("fullscreenchange", fullscreenChange); document.body.style.overflow = oldOverflow; old?.focus(); if (document.fullscreenElement === element) void document.exitFullscreen().catch(() => {}); };
   }, [dismiss]);
-  return <div className="lesson-fullscreen" ref={root} role="dialog" aria-modal="true" aria-label={title} tabIndex={-1} onTouchStart={(e) => { if ((e.target as HTMLElement).closest("button,input,textarea,select,details")) return; touch.current = { x:e.touches[0].clientX, y:e.touches[0].clientY }; }} onTouchEnd={(e) => { if (!touch.current) return; const dx = e.changedTouches[0].clientX-touch.current.x; const dy=e.changedTouches[0].clientY-touch.current.y; touch.current=null; if (Math.abs(dx)>80 && Math.abs(dx)>Math.abs(dy)*1.5) { if(dx<0) next?.(); else previous?.(); } }}><div className="fullscreen-top"><strong>{title}</strong><button onClick={dismiss}>닫기 (ESC)</button></div>{children}</div>;
+  return <div className={`lesson-fullscreen ${className}`} ref={root} role="dialog" aria-modal="true" aria-label={title} tabIndex={-1} onTouchStart={(e) => { if ((e.target as HTMLElement).closest("button,input,textarea,select,details")) return; touch.current = { x:e.touches[0].clientX, y:e.touches[0].clientY }; }} onTouchEnd={(e) => { if (!touch.current) return; const dx = e.changedTouches[0].clientX-touch.current.x; const dy=e.changedTouches[0].clientY-touch.current.y; touch.current=null; if (Math.abs(dx)>80 && Math.abs(dx)>Math.abs(dy)*1.5) { if(dx<0) next?.(); else previous?.(); } }}><div className="fullscreen-top"><strong>{title}</strong><button onClick={dismiss}>닫기 (ESC)</button></div>{children}</div>;
 }

@@ -29,6 +29,7 @@ registerHooks({
 const { ClassPanel } = await import("../components/teacher/ClassPanel.tsx");
 const { GroupBestPanel } = await import("../components/teacher/GroupBestPanel.tsx");
 const { BlindVote } = await import("../components/student/BlindVote.tsx");
+const { BlindRecipeOverview } = await import("../components/teacher/BlindRecipeOverview.tsx");
 const { defaultSettings } = await import("../lib/defaults.ts");
 const { newProject, blankRecord } = await import("../lib/notebook.ts");
 const { createBlindRound, withVote } = await import("../lib/groups.ts");
@@ -77,4 +78,48 @@ test("normal multiple-group test keeps own-group exclusion available", () => {
   assert.match(html, /반영한 표 0표/);
   assert.doesNotMatch(button(html, "자기 모둠 표 빼고 세기"), /disabled/);
   assert.match(button(html, "자기 모둠 표 빼고 세기"), /aria-pressed="true"/);
+});
+
+test("overview shows all 1, 7 and 12 samples with every ingredient while preserving blind identities", () => {
+  for (const count of [1, 7, 12]) {
+    const projects = Array.from({ length: count }, (_, index) => {
+      const project = structuredClone(student);
+      project.id = `overview-${index}`;
+      project.notebook.comparisons.__group = String(index + 1);
+      project.notebook.final.productName = `비밀라면-${index}`;
+      project.notebook.final.tasteLine = `비밀소개-${index}`;
+      project.notebook.final.record.note = `비밀메모-${index}`;
+      project.notebook.final.record.items = [
+        { id: "base", name: "기본 베이스", category: "BASE", amount: index + .25 },
+        { id: `ingredient-${index}`, name: `추가 재료 ${index}`, category: "첨가물", amount: index + 1 },
+      ];
+      return project;
+    });
+    const round = createBlindRound(projects, () => .99);
+    const html = render(BlindRecipeOverview, { samples: round.samples, projects, settings, revealed: false, onOpen: noop });
+    assert.equal((html.match(/aria-label="레시피 [A-Z] 크게 보기"/g) || []).length, count);
+    assert.doesNotMatch(html, /비밀라면-|비밀소개-|비밀메모-|\d+모둠/);
+    for (let index = 0; index < count; index++) {
+      assert.match(html, new RegExp(`추가 재료 ${index}<`));
+      assert(html.includes(`${index + .25}g`));
+    }
+    assert.match(html, /조리 시간/);
+    assert.match(html, /알레르기 확인/);
+    const revealed = render(BlindRecipeOverview, { samples: round.samples, projects, settings, revealed: true, onOpen: noop });
+    for (let index = 0; index < count; index++) {
+      assert(revealed.includes(`비밀라면-${index}`));
+      assert(revealed.includes(`${index + 1}모둠`));
+    }
+  }
+});
+
+test("overview excludes late submissions and keeps a missing sample visible", () => {
+  const late = structuredClone(student);
+  late.id = "late-student";
+  late.notebook.final.record.items = [{ id: "late", name: "늦게 제출한 재료", amount: 9, category: "첨가물" }];
+  const samples = [{ label: "A", projectId: student.id }, { label: "B", projectId: "missing-student" }];
+  const html = render(BlindRecipeOverview, { samples, projects: [student, late], settings, revealed: false, onOpen: noop });
+  assert.equal((html.match(/aria-label="레시피 [AB] 크게 보기"/g) || []).length, 2);
+  assert.match(html, /레시피 불러오는 중/);
+  assert.doesNotMatch(html, /늦게 제출한 재료/);
 });

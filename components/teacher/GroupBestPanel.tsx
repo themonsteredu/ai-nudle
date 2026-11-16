@@ -5,6 +5,7 @@ import { createBlindRound, groupCountOf, groupLabel, groupOf, groupSubmissions, 
 import { formatGrams, METHOD_NAMES } from "@/lib/notebook";
 import { AllergenNotice } from "../recipe/Allergens";
 import { Fullscreen } from "../recipe/Fullscreen";
+import { BlindRecipeOverview } from "./BlindRecipeOverview";
 
 /** A lesson change, or a function of the newest saved lesson (null = nothing to change any more). */
 export type LessonPatch = Partial<LessonClass> | ((lesson: LessonClass) => Partial<LessonClass> | null);
@@ -21,7 +22,7 @@ export function GroupBestPanel({ settings, classId, projects, commit, busy, refr
   const [excludeLate, setExcludeLate] = useState(false);
   const [previewRound, setPreviewRound] = useState("");
   // Remembers which round was being shown, so a later round never opens full screen by itself.
-  const [present, setPresent] = useState<{ round: string; index: number } | null>(null);
+  const [present, setPresent] = useState<{ round: string; index: number | null } | null>(null);
   const { latest, counts } = useMemo(() => groupSubmissions(projects), [projects]);
   const byId = useMemo(() => new Map(projects.map((p) => [p.id, p])), [projects]);
   const tally = useMemo(() => round ? tallyVotes(projects, round, excludeOwnEffective, excludeLate) : null, [projects, round, excludeOwnEffective, excludeLate]);
@@ -42,8 +43,10 @@ export function GroupBestPanel({ settings, classId, projects, commit, busy, refr
   const ownTotal = tally ? tally.rows.reduce((sum, row) => sum + row.ownVotes, 0) : 0;
   const top = tally ? Math.max(0, ...tally.rows.map(tally.counted)) : 0;
   const samples = round?.samples ?? [];
-  const presentIndex = !round || present?.round !== round.id || !samples.length ? null : Math.min(present.index, samples.length - 1);
+  const presentAll = Boolean(round && present?.round === round.id && present.index === null && samples.length);
+  const presentIndex = !round || present?.round !== round.id || present.index === null || !samples.length ? null : Math.min(present.index, samples.length - 1);
   const show = (index: number) => { if (round) setPresent({ round: round.id, index }); };
+  const showAll = () => { if (round) setPresent({ round: round.id, index: null }); };
   // During voting the board may show a preview, but the letter cards never carry a winner mark.
   const cardWinner = (label: string) => round?.status !== "voting" && winners.has(label);
   const emptyRecipe = (p?: StudentProject) => !p?.notebook?.final?.record.items.some((x) => x.amount > 0);
@@ -64,10 +67,11 @@ export function GroupBestPanel({ settings, classId, projects, commit, busy, refr
       return { blindRound: { ...saved, status, ...(status === "revealed" && !saved.revealedAt ? { revealedAt: new Date().toISOString() } : {}) } };
     }, message);
   };
-  function start() {
+  async function start() {
     if (submitted.length < 1) return;
     if (!window.confirm(`제출한 ${submitted.length}개 모둠 레시피로 블라인드 테스트를 시작할까요?\n${submitted.length === 1 ? "레시피 A 하나로 테스트하며, 자기 모둠 표도 함께 세어요." : "레시피는 A, B, C…로 무작위로 섞이고 학생 화면에 투표가 열려요."}`)) return;
-    void commit((current) => current.blindRound ? null : { blindRound: createBlindRound(submitted) }, "블라인드 테스트를 시작했어요. 학생 화면에 투표가 열려요.");
+    const nextRound = createBlindRound(submitted);
+    if (await commit((current) => current.blindRound ? null : { blindRound: nextRound }, "블라인드 테스트를 시작했어요. 학생 화면에 투표가 열려요.")) setPresent({ round: nextRound.id, index: null });
   }
   function reset() {
     if (!window.confirm("지금 투표를 지우고 새로 시작할까요?\n학생들이 고른 표는 더 이상 세지 않아요.")) return;
@@ -111,6 +115,7 @@ export function GroupBestPanel({ settings, classId, projects, commit, busy, refr
       {round && <div className="gb-stage">
         <div><strong className="gb-hero">{tally?.voters ?? 0}<small>명 투표</small></strong><p className="gb-lead">{round.status === "voting" ? `레시피 ${samples.length}개 · 학생 화면에서 투표 중이에요.` : round.status === "closed" ? round.revealedAt ? "모둠을 다시 가렸어요. 이미 공개한 투표라 다시 열 수는 없어요." : "투표가 마감됐어요. 결과를 확인하고 모둠을 공개해 주세요." : "모둠을 공개했어요. 학생 화면에는 '선생님 화면에서 결과 확인' 안내가 떠요."}</p>{tally && tally.late > 0 && <p className="gb-late">투표가 시작된 뒤 들어온 기록의 표 {tally.late}표를 {excludeLate ? "빼고" : "포함해서"} 셌어요.</p>}</div>
         <div className="gb-actions">
+          <button className="teacher-primary" onClick={showAll} disabled={!samples.length}>전체 레시피 한 화면 보기</button>
           {round.status === "voting" && <><button className="gb-toggle" aria-pressed={previewRound === round.id} onClick={() => setPreviewRound(previewRound === round.id ? "" : round.id)}><i />결과 미리 보기</button><button className="teacher-primary" disabled={busy} onClick={() => { if (window.confirm("투표를 마감할까요?\n마감하면 학생이 표를 바꿀 수 없어요.")) setStatus("closed", "투표를 마감했어요."); }}>투표 마감</button></>}
           {round.status === "closed" && <>{!round.revealedAt && <button className="gb-ghost" disabled={busy} onClick={() => setStatus("voting", "투표를 다시 열었어요.")}>투표 다시 열기</button>}<button className="teacher-primary" disabled={busy} onClick={() => { if (window.confirm("어느 모둠의 레시피인지 공개할까요?")) setStatus("revealed", "모둠을 공개했어요."); }}>모둠 공개</button></>}
           {round.status === "revealed" && <button className="gb-ghost" disabled={busy} onClick={() => setStatus("closed", "모둠 이름을 다시 가렸어요.")}>모둠 다시 가리기</button>}
@@ -132,15 +137,16 @@ export function GroupBestPanel({ settings, classId, projects, commit, busy, refr
     </section>}
 
     {round && <section className="gb-block" aria-labelledby="gb-card-title">
-      <header><div><h2 id="gb-card-title">블라인드 레시피 카드</h2><p>{revealed ? "모둠과 라면 이름을 공개했어요." : "조리에 필요한 정보만 보여요. 라면 이름·소개·모둠은 공개 전까지 숨겨요."}</p></div><button className="teacher-primary" onClick={() => show(0)} disabled={!samples.length}>크게 보기 (전체 화면)</button></header>
+      <header><div><h2 id="gb-card-title">블라인드 레시피 카드</h2><p>{revealed ? "모둠과 라면 이름을 공개했어요." : "조리에 필요한 정보만 보여요. 라면 이름·소개·모둠은 공개 전까지 숨겨요."}</p></div><button className="teacher-primary" onClick={showAll} disabled={!samples.length}>전체 레시피 한 화면 보기</button></header>
       <div className="gb-cards">{samples.map((sample, i) => <SampleCard key={sample.label} sample={sample} project={byId.get(sample.projectId)} loaded={projects.length > 0} settings={settings} revealed={revealed} winner={cardWinner(sample.label)} onOpen={() => show(i)} />)}</div>
     </section>}
 
     {round && submissions}
 
-    {round && presentIndex !== null && <Fullscreen title={`${lesson.name} · 블라인드 레시피 ${samples[presentIndex].label}`} close={() => setPresent(null)} previous={() => show(Math.max(0, presentIndex - 1))} next={() => show(Math.min(samples.length - 1, presentIndex + 1))}>
-      <div className="recipe-presentation gb-present"><SampleCard sample={samples[presentIndex]} project={byId.get(samples[presentIndex].projectId)} loaded={projects.length > 0} settings={settings} revealed={revealed} winner={cardWinner(samples[presentIndex].label)} />
-        <footer className="presentation-navigation"><button disabled={presentIndex === 0} onClick={() => show(presentIndex - 1)}>이전 레시피</button><span>{presentIndex + 1} / {samples.length}</span><button disabled={presentIndex === samples.length - 1} onClick={() => show(presentIndex + 1)}>다음 레시피</button></footer></div>
+    {round && (presentAll || presentIndex !== null) && <Fullscreen title={presentAll ? `${lesson.name} · 전체 블라인드 레시피` : `${lesson.name} · 블라인드 레시피 ${samples[presentIndex!].label}`} close={() => setPresent(null)} className={presentAll ? "gb-overview-fullscreen" : ""} previous={presentIndex !== null ? () => show(Math.max(0, presentIndex - 1)) : undefined} next={presentIndex !== null ? () => show(Math.min(samples.length - 1, presentIndex + 1)) : undefined}>
+      {presentAll ? <BlindRecipeOverview samples={samples} projects={projects} settings={settings} revealed={revealed} onOpen={show} /> : presentIndex !== null && <div className="recipe-presentation gb-present"><SampleCard sample={samples[presentIndex]} project={byId.get(samples[presentIndex].projectId)} loaded={projects.length > 0} settings={settings} revealed={revealed} winner={cardWinner(samples[presentIndex].label)} />
+        <footer className="presentation-navigation"><button disabled={presentIndex === 0} onClick={() => show(presentIndex - 1)}>이전 레시피</button><button onClick={showAll}>전체 레시피로 돌아가기</button><span>{presentIndex + 1} / {samples.length}</span><button disabled={presentIndex === samples.length - 1} onClick={() => show(presentIndex + 1)}>다음 레시피</button></footer></div>
+      }
     </Fullscreen>}
   </section>;
 }
