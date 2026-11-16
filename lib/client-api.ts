@@ -29,7 +29,7 @@ export async function ensureTeacherSession() {
   if (!payload.authenticated) await teacherSession("POST", TEACHER_API_PASSWORD);
 }
 export async function loadSettings(code?: string) {
-  return parseResponse<{ settings: AppSettings }>(await fetch(`/api/settings${code ? `?code=${encodeURIComponent(code)}` : ""}`, { cache: "no-store" }));
+  return parseResponse<{ settings: AppSettings }>(await fetch(`/api/settings${code ? `?code=${encodeURIComponent(code)}` : ""}`, { cache: "no-store", signal: AbortSignal.timeout(10000) }));
 }
 export async function saveSettings(settings: AppSettings) {
   return parseResponse<{ settings: AppSettings }>(await fetch("/api/settings", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ settings }) }));
@@ -38,7 +38,7 @@ export async function loadStudent(id: string, code = "", key = "") {
   return parseResponse<{ project: StudentProject | null }>(await fetch(`/api/students?id=${encodeURIComponent(id)}`, { cache: "no-store", headers: { "x-class-code": code, "x-student-key": key } }));
 }
 export async function saveStudent(project: StudentProject, code = "", key = "") {
-  return parseResponse<{ project: StudentProject }>(await fetch("/api/students", { method: "POST", headers: { "Content-Type": "application/json", "x-class-code": code, "x-student-key": key }, body: JSON.stringify({ project }), keepalive: JSON.stringify(project).length < 55000 }));
+  return parseResponse<{ project: StudentProject; groupChangeRejected?: string }>(await fetch("/api/students", { method: "POST", headers: { "Content-Type": "application/json", "x-class-code": code, "x-student-key": key }, body: JSON.stringify({ project }), keepalive: JSON.stringify(project).length < 55000 }));
 }
 export async function loadStudents(classId = "", code = "") {
   return parseResponse<{ projects: StudentProject[] }>(await fetch(`/api/students?classId=${encodeURIComponent(classId)}`, { cache: "no-store", headers: { "x-class-code": code } }));

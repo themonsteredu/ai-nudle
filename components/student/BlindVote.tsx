@@ -32,7 +32,7 @@ export function BlindVote({ project, round, refresh, patch, onBack }: { project:
   }
   return <section className="gb-ballot">{heading}
     <p className={`gb-ballot-state ${round.status}`}>{STATE_TEXT[round.status]}</p>
-    {open && <p className="gb-ballot-hint">우리 모둠 레시피를 고르면 표가 세지지 않을 수 있어요. 다른 모둠 레시피 중에서 골라 주세요.</p>}
+    {open && <p className="gb-ballot-hint">{round.samples.length === 1 ? "1개 모둠으로 테스트 중이에요. 레시피 A를 누르면 우리 모둠 표도 함께 세어요." : "우리 모둠 레시피를 고르면 표가 세지지 않을 수 있어요. 다른 모둠 레시피 중에서 골라 주세요."}</p>}
     <div className="gb-ballot-grid" role="group" aria-label="레시피 고르기">{round.samples.map((sample) => <button key={sample.label} aria-label={`레시피 ${sample.label}`} aria-pressed={shown === sample.label} className={shown === sample.label ? "chosen" : ""} disabled={!open || Boolean(pending)} onClick={() => void choose(sample.label)}><small>레시피</small><b>{sample.label}</b>{shown === sample.label && <em>{pending ? "저장 중" : "내 선택"}</em>}</button>)}</div>
     <p className="gb-ballot-mine" role="status">{mine ? <>내 선택: <b>{mine}</b>{open && " · 마감 전까지 바꿀 수 있어요"}</> : open ? "아직 고르지 않았어요." : "이번 투표에는 고르지 않았어요."}</p>
     {notice && <p className="gb-ballot-notice" role="alert">{notice}</p>}

@@ -23,6 +23,7 @@ export async function PUT(request: Request) {
     const { settings: raw } = await request.json() as { settings?: AppSettings };
     if (!raw || !Array.isArray(raw.ingredients) || !Array.isArray(raw.classes)) return Response.json({ error: "설정을 확인해 주세요." }, { status: 400 });
     const classes = raw.classes;
+    if (classes.some((lesson) => lesson.allowGroupChange !== undefined && typeof lesson.allowGroupChange !== "boolean")) return Response.json({ error: "모둠 변경 허용 설정을 확인해 주세요." }, { status: 400 });
     if (new Set(classes.map((x) => x.code)).size !== classes.length || new Set(classes.map((x) => x.id)).size !== classes.length || classes.some((x) => !x.name.trim() || !/^[A-Z0-9]{6,12}$/.test(x.code) || !Number.isFinite(x.waterMl) || x.waterMl <= 0 || !Number.isFinite(x.cookMinutes) || x.cookMinutes <= 0 || !Number.isFinite(x.noodleFraction) || x.noodleFraction <= 0 || x.noodleFraction > 1)) return Response.json({ error: "반 이름, 중복 없는 수업 코드, 물 양과 조리 시간을 확인해 주세요." }, { status: 400 });
     const previous = await readSettings();
     // Class identity cannot be reused or removed: historical records must keep their classroom.

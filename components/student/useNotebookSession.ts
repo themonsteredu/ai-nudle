@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ApiError, loadSettings, loadStudent, saveStudent } from "@/lib/client-api";
 import { newProject } from "@/lib/notebook";
 import { defaultSettings } from "@/lib/defaults";
+import { GROUP_KEY } from "@/lib/groups";
 import type { AppSettings, StudentProject } from "@/lib/types";
 type LocalSession = { project: StudentProject; key: string; code: string; dirty: boolean };
 const localKey = (id: string) => `ramen-notebook:${id}`;
@@ -26,14 +27,22 @@ export function useNotebookSession() {
     setStatus("저장 중");
     const sent = session.project;
     try {
-      const { project: saved } = await saveStudent(sent, session.code, session.key);
+      const { project: saved, groupChangeRejected } = await saveStudent(sent, session.code, session.key);
       if (active.current !== session) return;
       const dirty = session.project !== sent;
       session.project = { ...session.project, revision: saved.revision, researcherNumber: saved.researcherNumber, createdAt: saved.createdAt };
+      if (groupChangeRejected && session.project.notebook && session.project.notebook.comparisons[GROUP_KEY] === sent.notebook?.comparisons[GROUP_KEY]) {
+        const comparisons = { ...session.project.notebook.comparisons };
+        const savedGroup = saved.notebook?.comparisons[GROUP_KEY];
+        if (savedGroup) comparisons[GROUP_KEY] = savedGroup;
+        else delete comparisons[GROUP_KEY];
+        session.project = { ...session.project, notebook: { ...session.project.notebook, comparisons,
+          ...(session.project.notebook.final === sent.notebook?.final ? { final: saved.notebook?.final } : {}) } };
+      }
       session.dirty = dirty;
       saveLocal(session);
       setProject(session.project);
-      setStatus(dirty ? "기기에 저장됨 · 서버 저장 대기" : "자동 저장됨");
+      setStatus(groupChangeRejected ? `${groupChangeRejected} 레시피 기록은 저장됐어요.` : dirty ? "기기에 저장됨 · 서버 저장 대기" : "자동 저장됨");
     } catch (error) {
       if (error instanceof ApiError && (error.status === 409 || error.status === 403)) blocked.current = true;
       setStatus(error instanceof ApiError && blocked.current ? error.message : "기기에 저장됨 · 연결되면 다시 저장해요");
@@ -46,11 +55,16 @@ export function useNotebookSession() {
     document.addEventListener("visibilitychange", onHide);
     return () => { clearInterval(timer); window.removeEventListener("online", flush); document.removeEventListener("visibilitychange", onHide); };
   }, [flush]);
-  /** Reloads the lesson (blind vote status, group count). Returns null when offline. */
+  /** Reloads the lesson, including the teacher's group-change permission. Returns null when offline. */
   const refreshSettings = useCallback(async () => {
     const session = active.current;
     if (!session) return null;
-    try { const loaded = await loadSettings(session.code); if (active.current === session) setSettings(loaded.settings); return loaded.settings; }
+    try {
+      const loaded = await loadSettings(session.code);
+      if (active.current !== session) return null;
+      setSettings(loaded.settings);
+      return loaded.settings;
+    }
     catch { return null; /* Preserve loaded lesson offline. */ }
   }, []);
   useEffect(() => {

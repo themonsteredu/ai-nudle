@@ -8,7 +8,7 @@ import { RecipeEditor, RecipeReadout } from "./student/RecipeNotebook";
 import { FinalRecipe } from "./student/FinalRecipe";
 import { GroupPicker } from "./student/GroupPicker";
 import { BlindVote } from "./student/BlindVote";
-import { groupCountOf, groupLabel, groupOf, voteOf, withGroup } from "@/lib/groups";
+import { changeProjectGroup, groupChangeError, groupCountOf, groupLabel, groupOf, voteOf } from "@/lib/groups";
 export const grams = formatGrams;
 export type StudentSection = "home" | "process" | "lab" | "tests" | "compare" | "best" | "label";
 export default function StudentApp() {
@@ -19,6 +19,7 @@ export default function StudentApp() {
   const method: RecipeMethod = "base";
   const [section, setSection] = useState<"record" | "label" | "vote">("record");
   const [pickingGroup, setPickingGroup] = useState(false);
+  const [checkingGroup, setCheckingGroup] = useState(false);
   if (!project) return <main className="cover-screen notebook-cover"><div className="cover-copy"><span className="cover-kicker">FOOD R&amp;D LAB</span><h1>라면 연구소</h1><p>내가 넣은 재료와 맛을 남겨요.</p><form className="join-class" onSubmit={(e) => { e.preventDefault(); void join(String(new FormData(e.currentTarget).get("classCode") ?? "")); }}><label>수업 코드<input name="classCode" value={code} onChange={(e) => setCode(e.target.value.toUpperCase().replace(/[^0-9A-Z]/g, ""))} maxLength={12} inputMode="numeric" autoComplete="off" placeholder="선생님이 알려 주신 숫자 코드" required /></label><button className="primary-cta compact" disabled={busy}>{busy ? "여는 중" : "기록 시작하기"}</button></form><p className="save-status" role="status">{status}</p><Link className="cover-teacher-link" href="/teacher">교사 설정 화면</Link></div><div className="hero-image-wrap"><img src="/ramen-hero.webp" alt="라면 연구를 위한 재료와 라면" /></div></main>;
   const notebook = project.notebook ?? emptyNotebook();
   const lesson = settings.classes![0];
@@ -26,24 +27,42 @@ export default function StudentApp() {
   const groupCount = groupCountOf(lesson);
   const round = lesson.blindRound;
   const myVote = voteOf(project, round);
-  // A recipe that went into a blind round stays fixed, with its group, until the teacher resets the round.
-  const inTest = Boolean(round?.samples.some((x) => x.projectId === project.id));
-  // Own-group votes are judged by the voter's group, so nobody switches group while tasting and voting.
-  const groupLocked = inTest || round?.status === "voting" || round?.status === "closed";
-  const lockMessage = inTest ? "우리 모둠 레시피가 블라인드 테스트에 나가서, 선생님이 투표를 초기화하기 전까지 모둠을 바꿀 수 없어요." : "블라인드 투표 중에는 모둠을 바꿀 수 없어요. 투표가 끝나면 바꿀 수 있어요.";
+  const groupLocked = lesson.allowGroupChange !== true;
   const leave = () => { setPickingGroup(false); session.leave(); };
-  function pickGroup(n: number) {
-    if (group && groupLocked) { window.alert(lockMessage); setPickingGroup(false); return; }
-    const moving = Boolean(group && n !== group && notebook.final?.shared);
-    if (moving && !window.confirm(`${groupLabel(n)}으로 바꾸면 지금 제출한 모둠 베스트 레시피는 제출 취소돼요.\n새 모둠에서 다시 제출해 주세요. 바꿀까요?`)) return;
-    session.patch((p) => {
-      const next = withGroup(p.notebook ?? emptyNotebook(), n);
-      return { ...p, notebook: moving && next.final ? { ...next, final: { ...next.final, shared: false } } : next };
-    });
-    setPickingGroup(false);
+  async function checkGroupPermission() {
+    const fresh = await session.refreshSettings();
+    const current = fresh?.classes?.[0];
+    if (!current) window.alert("연결을 확인하고 다시 눌러 주세요. 모둠은 바뀌지 않았어요.");
+    return current;
   }
-  // A group number above 모둠 수 is kept as it is during a round, so a sample never changes its group.
-  if (!group || (group > groupCount && !groupLocked) || pickingGroup) return <GroupPicker lessonName={lesson.name} count={groupCount} current={group} onPick={pickGroup} onCancel={group && group <= groupCount ? () => setPickingGroup(false) : undefined} onLeave={leave} />;
+  async function openGroupPicker() {
+    if (checkingGroup) return;
+    setCheckingGroup(true);
+    try {
+      const current = await checkGroupPermission();
+      if (!current) return;
+      if (current.allowGroupChange !== true) { window.alert("선생님이 모둠 변경을 허용하면 바꿀 수 있어요."); return; }
+      setPickingGroup(true);
+    } finally { setCheckingGroup(false); }
+  }
+  async function pickGroup(n: number) {
+    if (checkingGroup || !project) return;
+    if (n === group) { setPickingGroup(false); return; }
+    setCheckingGroup(true);
+    try {
+      const current = group ? await checkGroupPermission() : lesson;
+      if (!current) return;
+      const error = groupChangeError(project, n, current);
+      if (error) { window.alert(error); setPickingGroup(false); return; }
+      const inTest = current.blindRound?.samples.some((x) => x.projectId === project.id);
+      if (group && notebook.final?.shared && !window.confirm(inTest
+        ? `${groupLabel(n)}으로 바꿀까요?\n작성한 레시피와 진행 중인 테스트는 그대로 두고, 제출 모둠 번호를 바꿔요.`
+        : `${groupLabel(n)}으로 바꾸면 지금 제출한 모둠 베스트 레시피는 제출 취소돼요.\n작성한 기록은 남아요. 새 모둠에서 다시 제출해 주세요.`)) return;
+      session.patch((p) => changeProjectGroup(p, n, current));
+      setPickingGroup(false);
+    } finally { setCheckingGroup(false); }
+  }
+  if (!group || pickingGroup) return <GroupPicker lessonName={lesson.name} count={groupCount} current={group} busy={checkingGroup} onPick={(n) => void pickGroup(n)} onCancel={group ? () => setPickingGroup(false) : undefined} onLeave={leave} />;
   const data = notebook[method];
   const setNotebook = (n: typeof notebook) => update({ ...project, notebook: n });
   // One recipe page per student: it is saved as the 라면 시식 record, which is what the group best submission reads.
@@ -55,7 +74,7 @@ export default function StudentApp() {
     setNotebook(copyToTasting(notebook, method, record));
   };
   return <div className="student-shell notebook-shell"><aside className="student-sidebar"><button className="brand" onClick={() => setSection("record")}><span className="brand-kicker">FOOD R&amp;D LAB</span><strong>라면 연구소</strong></button><nav className="student-nav">{nav.map(([id,label]) => <button key={id} className={`${section === id ? "active" : ""}${id === "vote" && round?.status === "voting" ? " gb-nav-vote" : ""}`} onClick={() => setSection(id)}>{label}</button>)}</nav><div className="notebook-session"><strong>{groupLabel(group)}{project.researcherNumber ? ` · ${project.researcherNumber}번 연구원` : ""}</strong><p>{lesson.name}</p><button onClick={leave}>수업 나가기</button></div></aside>
-    <main className="student-main"><header className="student-topbar"><div className="gb-topbar-title"><strong>{lesson.name}</strong><button type="button" className="gb-mygroup gb-mygroup-button" title="모둠 바꾸기" onClick={() => groupLocked ? window.alert(lockMessage) : setPickingGroup(true)}>{groupLabel(group)} · 바꾸기</button></div><span className="save-status" role="status">{status}</span></header><section className="content-stage notebook-content">
+    <main className="student-main"><header className="student-topbar"><div className="gb-topbar-title"><strong>{lesson.name}</strong><button type="button" className="gb-mygroup gb-mygroup-button" title={groupLocked ? "모둠 바꾸기 · 선생님 허용 필요" : "모둠 바꾸기"} disabled={checkingGroup} onClick={() => void openGroupPicker()}>{groupLabel(group)} · {checkingGroup ? "확인 중" : "바꾸기"}</button></div><span className="save-status" role="status">{status}</span></header><section className="content-stage notebook-content">
       {round?.status === "voting" && section !== "vote" && <button className="gb-vote-banner" onClick={() => setSection("vote")}><span>블라인드 투표 중</span><strong>{myVote ? `내 선택: 레시피 ${myVote}` : "가장 맛있었던 레시피를 골라 주세요"}</strong><em>{myVote ? "바꾸러 가기" : "투표하러 가기"}</em></button>}
       {section === "record" && <><div className="page-heading"><div><span className="eyebrow">MY RECIPE</span><h1>내 레시피 기록</h1></div></div>
       <p className="lesson-settings">선생님 설정 · 물 {lesson.waterMl}ml · 라면사리 {lesson.noodleFraction}개 · 기다리는 시간 {lesson.cookMinutes}분</p>

@@ -16,13 +16,15 @@ export function GroupBestPanel({ settings, classId, projects, commit, busy, refr
   const lesson = settings.classes?.find((x) => x.id === classId);
   const round = lesson?.blindRound;
   const [excludeOwn, setExcludeOwn] = useState(true);
+  const singleSample = round?.samples.length === 1;
+  const excludeOwnEffective = !singleSample && excludeOwn;
   const [excludeLate, setExcludeLate] = useState(false);
   const [previewRound, setPreviewRound] = useState("");
   // Remembers which round was being shown, so a later round never opens full screen by itself.
   const [present, setPresent] = useState<{ round: string; index: number } | null>(null);
   const { latest, counts } = useMemo(() => groupSubmissions(projects), [projects]);
   const byId = useMemo(() => new Map(projects.map((p) => [p.id, p])), [projects]);
-  const tally = useMemo(() => round ? tallyVotes(projects, round, excludeOwn, excludeLate) : null, [projects, round, excludeOwn, excludeLate]);
+  const tally = useMemo(() => round ? tallyVotes(projects, round, excludeOwnEffective, excludeLate) : null, [projects, round, excludeOwnEffective, excludeLate]);
 
   const head = <header className="teacher-panel-head"><div><span>GROUP BEST · BLIND TEST</span><h1>모둠 베스트·블라인드 투표</h1><p>{lesson ? `${lesson.name} · 5초마다 갱신 · 모둠 번호는 '모둠 공개'를 누르기 전까지 숨겨져요.` : "반을 고르면 모둠 제출과 투표를 볼 수 있어요."}</p></div>{lesson && <button className="teacher-primary" onClick={refresh} disabled={loading}>{loading ? "불러오는 중" : "새로고침"}</button>}</header>;
   if (!lesson) return <section className="teacher-panel gb-panel">{head}<p className="gb-empty">위의 &apos;수업 선택&apos;에서 반을 골라 주세요. 반 정보 없는 이전 기록에서는 모둠 투표를 할 수 없어요.</p></section>;
@@ -63,8 +65,8 @@ export function GroupBestPanel({ settings, classId, projects, commit, busy, refr
     }, message);
   };
   function start() {
-    if (submitted.length < 2) return;
-    if (!window.confirm(`제출한 ${submitted.length}개 모둠 레시피로 블라인드 테스트를 시작할까요?\n레시피는 A, B, C…로 무작위로 섞이고 학생 화면에 투표가 열려요.`)) return;
+    if (submitted.length < 1) return;
+    if (!window.confirm(`제출한 ${submitted.length}개 모둠 레시피로 블라인드 테스트를 시작할까요?\n${submitted.length === 1 ? "레시피 A 하나로 테스트하며, 자기 모둠 표도 함께 세어요." : "레시피는 A, B, C…로 무작위로 섞이고 학생 화면에 투표가 열려요."}`)) return;
     void commit((current) => current.blindRound ? null : { blindRound: createBlindRound(submitted) }, "블라인드 테스트를 시작했어요. 학생 화면에 투표가 열려요.");
   }
   function reset() {
@@ -105,7 +107,7 @@ export function GroupBestPanel({ settings, classId, projects, commit, busy, refr
 
     <section className="gb-block gb-control" aria-labelledby="gb-control-title">
       <header><div><h2 id="gb-control-title">블라인드 테스트</h2>{round ? <span className={`gb-status ${round.status}`}>{STATUS_TEXT[round.status]}</span> : <p>제출한 모둠 레시피를 무작위로 섞어 A, B, C…로 보여 줘요. 학생 화면에도 모둠 번호는 나오지 않아요.</p>}</div></header>
-      {!round && <div className="gb-stage"><p className="gb-lead">{submitted.length >= 2 ? `${submitted.length}개 모둠 레시피로 시작할 수 있어요.` : `2개 모둠 이상 제출하면 시작할 수 있어요. (지금 ${submitted.length}개)`}</p><div className="gb-actions"><button className="teacher-primary" onClick={start} disabled={busy || submitted.length < 2}>블라인드 테스트 시작</button></div></div>}
+      {!round && <div className="gb-stage"><p className="gb-lead">{submitted.length >= 1 ? `${submitted.length}개 모둠 레시피로 시작할 수 있어요.` : `1개 모둠만 제출해도 시작할 수 있어요. (지금 ${submitted.length}개)`}</p><div className="gb-actions"><button className="teacher-primary" onClick={start} disabled={busy || submitted.length < 1}>블라인드 테스트 시작</button></div></div>}
       {round && <div className="gb-stage">
         <div><strong className="gb-hero">{tally?.voters ?? 0}<small>명 투표</small></strong><p className="gb-lead">{round.status === "voting" ? `레시피 ${samples.length}개 · 학생 화면에서 투표 중이에요.` : round.status === "closed" ? round.revealedAt ? "모둠을 다시 가렸어요. 이미 공개한 투표라 다시 열 수는 없어요." : "투표가 마감됐어요. 결과를 확인하고 모둠을 공개해 주세요." : "모둠을 공개했어요. 학생 화면에는 '선생님 화면에서 결과 확인' 안내가 떠요."}</p>{tally && tally.late > 0 && <p className="gb-late">투표가 시작된 뒤 들어온 기록의 표 {tally.late}표를 {excludeLate ? "빼고" : "포함해서"} 셌어요.</p>}</div>
         <div className="gb-actions">
@@ -114,12 +116,13 @@ export function GroupBestPanel({ settings, classId, projects, commit, busy, refr
           {round.status === "revealed" && <button className="gb-ghost" disabled={busy} onClick={() => setStatus("closed", "모둠 이름을 다시 가렸어요.")}>모둠 다시 가리기</button>}
         </div>
       </div>}
+      {singleSample && <p className="gb-lead">1개 모둠 테스트예요. 자기 모둠 표도 포함해 결과를 확인할 수 있어요.</p>}
       {round && <footer className="gb-foot"><p>다시 하고 싶다면 투표를 지우고 처음부터 시작할 수 있어요.</p><button className="gb-ghost gb-danger" onClick={reset} disabled={busy}>투표 초기화 · 새로 시작</button></footer>}
     </section>
 
     {round && tally && showResults && <section className="gb-block gb-results" aria-labelledby="gb-result-title">
-      <header><div><h2 id="gb-result-title">{round.status === "voting" ? "결과 미리 보기" : "투표 결과"}</h2><p>{round.status === "voting" ? "학생 화면에는 없지만, 칠판에 띄운 화면이라면 학생들도 볼 수 있어요. " : ""}반영한 표 {counted}표 · 자기 모둠 표 {ownTotal}표 {excludeOwn ? "제외" : "포함"}{tally.late > 0 ? ` · 투표 시작 뒤 들어온 기록 ${tally.late}표 ${excludeLate ? "제외" : "포함"}` : ""}</p></div>
-        <button className="gb-toggle" aria-pressed={excludeOwn} onClick={() => setExcludeOwn(!excludeOwn)}><i />자기 모둠 표 빼고 세기</button>{tally.late > 0 && <button className="gb-toggle" aria-pressed={excludeLate} title="같은 기기에서 '다른 학생 시작'으로 여러 번 투표했을 수 있을 때 사용해요" onClick={() => setExcludeLate(!excludeLate)}><i />시작 뒤 들어온 기록 표 빼기</button>}</header>
+      <header><div><h2 id="gb-result-title">{round.status === "voting" ? "결과 미리 보기" : "투표 결과"}</h2><p>{round.status === "voting" ? "학생 화면에는 없지만, 칠판에 띄운 화면이라면 학생들도 볼 수 있어요. " : ""}반영한 표 {counted}표 · 자기 모둠 표 {ownTotal}표 {excludeOwnEffective ? "제외" : "포함"}{tally.late > 0 ? ` · 투표 시작 뒤 들어온 기록 ${tally.late}표 ${excludeLate ? "제외" : "포함"}` : ""}</p></div>
+        <button className="gb-toggle" aria-pressed={excludeOwnEffective} disabled={singleSample} onClick={() => setExcludeOwn(!excludeOwn)}><i />자기 모둠 표 빼고 세기</button>{tally.late > 0 && <button className="gb-toggle" aria-pressed={excludeLate} title="같은 기기에서 '다른 학생 시작'으로 여러 번 투표했을 수 있을 때 사용해요" onClick={() => setExcludeLate(!excludeLate)}><i />시작 뒤 들어온 기록 표 빼기</button>}</header>
       <p className="gb-winner">{winnerText()}</p>
       <ol className="gb-bars">{tally.rows.map((row) => { const n = tally.counted(row); const pct = counted ? Math.round(n / counted * 100) : 0; const win = winners.has(row.label); return <li key={row.label} className={win ? "win" : ""} title={`레시피 ${row.label} · ${n}표 · ${pct}%`}>
         <span className="gb-bar-name">레시피 {row.label}{revealed && <small>{row.group ? groupLabel(row.group) : "모둠 정보 없음"}</small>}</span>

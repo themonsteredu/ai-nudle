@@ -169,3 +169,11 @@
 @media print {
   .gb-panel .gb-actions, .gb-panel .gb-toggle, .gb-panel .gb-ghost { display: none !important; }
 }
+
+/* Classroom permission is saved with the other lesson settings. */
+.class-group-permission { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 14px 24px; border-block: 1px solid var(--line); padding: 22px 0; }
+.class-group-permission > div { flex: 1 1 320px; min-width: 0; }
+.class-group-permission strong { font-size: 19px; }
+.class-group-permission p { margin: 8px 0 0; color: var(--muted); font-size: 15px; line-height: 1.6; word-break: keep-all; }
+.class-group-permission > p { flex-basis: 100%; }
+.gb-toggle:disabled { opacity: .6; cursor: default; }

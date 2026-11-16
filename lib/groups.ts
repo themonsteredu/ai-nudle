@@ -17,6 +17,24 @@ export function groupOf(project?: StudentProject | null): number | undefined {
 }
 export const withGroup = (notebook: Notebook, group: number): Notebook => ({ ...notebook, comparisons: { ...notebook.comparisons, [GROUP_KEY]: String(group) } });
 
+/** First selection is always available. Later changes require the saved classroom permission. */
+export function groupChangeError(project: StudentProject | undefined, group: number | undefined, lesson: LessonClass): string | undefined {
+  const previous = groupOf(project);
+  if (previous === group) return undefined;
+  if (!group || !Number.isInteger(group) || group < 1 || group > groupCountOf(lesson)) return "선생님이 정한 모둠 번호를 골라 주세요.";
+  if (previous && lesson.allowGroupChange !== true) return "선생님이 모둠 변경을 허용하면 바꿀 수 있어요.";
+}
+
+/** Keep every recipe and vote. A sample already in a round stays submitted after a teacher-authorized correction. */
+export function changeProjectGroup(project: StudentProject, group: number, lesson: LessonClass): StudentProject {
+  const notebook = project.notebook;
+  if (!notebook || groupOf(project) === group) return project;
+  const inRound = lesson.blindRound?.samples.some((sample) => sample.projectId === project.id);
+  const movingSubmission = Boolean(groupOf(project) && notebook.final?.shared && !inRound);
+  const next = withGroup(notebook, group);
+  return { ...project, notebook: movingSubmission && next.final ? { ...next, final: { ...next.final, shared: false } } : next };
+}
+
 export function voteOf(project: StudentProject | null | undefined, round?: BlindRound): string | undefined {
   if (!round) return undefined;
   const label = project?.notebook?.comparisons?.[voteKey(round.id)];
