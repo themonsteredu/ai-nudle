@@ -129,6 +129,8 @@ export type LessonClass = {
   noodleFraction: number;
   /** Number of 모둠 students can pick from. Missing on older classes (defaults to 6). */
   groupCount?: number;
+  /** Only the teacher can enable changing an already selected group, including during a blind round. */
+  allowGroupChange?: boolean;
   /** Current blind taste vote. Sent to students too, so it never names a group. */
   blindRound?: BlindRound;
 };

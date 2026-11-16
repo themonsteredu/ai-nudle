@@ -4,6 +4,7 @@ import { studentProjects } from "@/db/schema";
 import { isTeacherRequest } from "@/lib/teacher-auth";
 import { readSettings } from "@/lib/settings-store";
 import { sanitizeProject, validNotebook } from "@/lib/project-validation";
+import { GROUP_KEY, groupChangeError, groupOf } from "@/lib/groups";
 import type { StudentProject } from "@/lib/types";
 type StoredProject = StudentProject & { ownerHash?: string };
 async function hash(token: string) {
@@ -56,6 +57,21 @@ export async function POST(request: Request) {
     if ((raw.revision ?? 0) !== (old?.revision ?? 0)) return Response.json({ error: "다른 창에서 저장한 기록이 있습니다. 현재 내용을 내려받은 뒤 다시 열어 주세요." }, { status: 409 });
     const now = new Date().toISOString();
     const project: StoredProject = { ...sanitizeProject(raw), ownerHash, classId: lesson.id, revision: (old?.revision ?? 0) + 1, createdAt: old?.createdAt ?? now, updatedAt: now };
+    // Enforce the saved permission even for a stale/offline screen. Keep recipe edits saving if it was revoked.
+    const selectedGroup = groupOf(project);
+    const groupChangeRejected = project.notebook!.comparisons[GROUP_KEY] && !selectedGroup
+      ? "선생님이 정한 모둠 번호를 골라 주세요."
+      : groupChangeError(old, selectedGroup, lesson);
+    if (groupChangeRejected) {
+      const previousGroup = old?.notebook?.comparisons[GROUP_KEY];
+      if (previousGroup) project.notebook!.comparisons[GROUP_KEY] = previousGroup;
+      else delete project.notebook!.comparisons[GROUP_KEY];
+      // Undo the submission cancellation attached to a rejected move, without losing recipe drafts.
+      if (old?.notebook?.final) project.notebook!.final = old.notebook.final;
+    } else if (groupOf(old) !== selectedGroup && lesson.blindRound?.samples.some((sample) => sample.projectId === project.id)) {
+      // A teacher-authorized group correction must never remove or alter the recipe being tasted.
+      project.notebook!.final = old?.notebook?.final ?? project.notebook!.final;
+    }
     // An atomic counter allocates a stable anonymous number, including simultaneous joins.
     if (old?.researcherNumber) project.researcherNumber = old.researcherNumber;
     else {
@@ -84,6 +100,6 @@ export async function POST(request: Request) {
       const inserted = await db.insert(studentProjects).values({ id: project.id, ...values }).onConflictDoNothing().returning({ id: studentProjects.id });
       if (!inserted.length) return Response.json({ error: "다른 창에서 먼저 저장했습니다. 기록을 다시 열어 주세요." }, { status: 409 });
     }
-    return Response.json({ project: publicProject(project) });
+    return Response.json({ project: publicProject(project), ...(groupChangeRejected ? { groupChangeRejected } : {}) });
   } catch { return Response.json({ error: "서버에 저장하지 못했습니다. 이 기기의 기록은 유지됩니다." }, { status: 503 }); }
 }
